@@ -1,13 +1,11 @@
 Source: serialize
 Section: libdevel
-Priority: optional
 Maintainer: Glenn Fiedler <glenn@mas-bandwidth.com>
-Build-Depends: debhelper-compat (= 13), cmake
-Standards-Version: 4.7.0
+Build-Depends: debhelper-compat (= 14), cmake
+Standards-Version: 4.7.4
 Homepage: https://github.com/mas-bandwidth/serialize
 Vcs-Git: https://github.com/mas-bandwidth/serialize.git
 Vcs-Browser: https://github.com/mas-bandwidth/serialize
-Rules-Requires-Root: no
 
 Package: libserialize-dev
 Architecture: all
