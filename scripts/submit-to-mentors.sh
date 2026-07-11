@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
 # Sign and upload the official-track source packages to mentors.debian.net.
 #
-#   usage: submit-to-mentors.sh wave1|wave2
+#   usage: submit-to-mentors.sh wave1|wave2 [artifact-dir]
 #
 #   wave1 = serialize, reliable, netcode   (mutually independent)
 #   wave2 = yojimbo                        (only after wave1 clears NEW)
+#
+# With [artifact-dir], uses an already-downloaded official-source-packages
+# artifact instead of fetching it with gh (no GitHub auth needed).
 #
 # Run this on a Debian/Ubuntu machine (not macOS) with:
 #   - your personal GPG key available to gpg (debsign uses it)
@@ -25,19 +28,25 @@ case "$WAVE" in
     *) echo "error: unknown wave '$WAVE' (use wave1 or wave2)" >&2; exit 1 ;;
 esac
 
-for tool in gh debsign dput; do
+for tool in debsign dput; do
     command -v "$tool" >/dev/null || {
-        echo "error: $tool not found (apt install gh devscripts dput)" >&2; exit 1; }
+        echo "error: $tool not found (apt install devscripts dput)" >&2; exit 1; }
 done
 
-RUN="$(gh run list --repo mas-bandwidth/apt --workflow official \
-      --status success --limit 1 --json databaseId --jq '.[0].databaseId')"
-[ -n "$RUN" ] || { echo "error: no successful 'official' workflow run found" >&2; exit 1; }
-
-WORK="$(mktemp -d)"
-echo "downloading official-source-packages from run $RUN to $WORK"
-gh run download "$RUN" --repo mas-bandwidth/apt \
-    --name official-source-packages --dir "$WORK"
+if [ -n "${2:-}" ]; then
+    WORK="$(cd "$2" && pwd)"
+    echo "using artifact directory $WORK"
+else
+    command -v gh >/dev/null || {
+        echo "error: gh not found; pass an artifact directory instead" >&2; exit 1; }
+    RUN="$(gh run list --repo mas-bandwidth/apt --workflow official \
+          --status success --limit 1 --json databaseId --jq '.[0].databaseId')"
+    [ -n "$RUN" ] || { echo "error: no successful 'official' workflow run found" >&2; exit 1; }
+    WORK="$(mktemp -d)"
+    echo "downloading official-source-packages from run $RUN to $WORK"
+    gh run download "$RUN" --repo mas-bandwidth/apt \
+        --name official-source-packages --dir "$WORK"
+fi
 cd "$WORK"
 
 for p in $PKGS; do
