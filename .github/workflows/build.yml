@@ -9,7 +9,14 @@ name: build
 on:
   push:
     branches: [main]
+    # docs don't need a rebuild, and official/** is covered by official.yml
+    paths-ignore:
+      - "**.md"
+      - "official/**"
   pull_request:
+    paths-ignore:
+      - "**.md"
+      - "official/**"
   workflow_dispatch:
 
 permissions:

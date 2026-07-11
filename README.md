@@ -90,8 +90,11 @@ self-contained and needs no dependencies.
 
 3. In the repository settings on GitHub:
    - **Pages** → Source: **GitHub Actions**.
-   - **Actions → General** → allow GitHub Actions to **create and approve pull
-     requests** (used by the daily release-check workflow).
+   - Optional: allow GitHub Actions to **create and approve pull requests**,
+     so the daily release check can open bump PRs. For this org that toggle
+     lives at the **organization** level (mas-bandwidth → Settings → Actions
+     → General → Workflow permissions); until it's enabled, the release check
+     still runs and prints the needed versions.env change in its job log.
 
 4. Run the **build** workflow (Actions tab → build → Run workflow). When it
    finishes, the repository is live at
