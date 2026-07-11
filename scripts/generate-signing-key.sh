@@ -25,9 +25,11 @@ GNUPGHOME="$(mktemp -d)"
 export GNUPGHOME
 trap 'rm -rf "$GNUPGHOME"' EXIT
 
-# No passphrase: CI signs unattended. No expiry: apt repo keys are rotated
-# deliberately, not on a timer.
-gpg --batch --quick-generate-key "$UID_STR" ed25519 sign never
+# No passphrase (loopback pinentry, so no interactive prompt): CI signs
+# unattended. No expiry: apt repo keys are rotated deliberately, not on a
+# timer.
+gpg --batch --pinentry-mode loopback --passphrase '' \
+    --quick-generate-key "$UID_STR" ed25519 sign never
 
 gpg --armor --export > "$PUBLIC"
 gpg --armor --export-secret-keys > "$SECRET"
