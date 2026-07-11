@@ -1,0 +1,29 @@
+To: submit@bugs.debian.org
+Subject: ITP: yojimbo -- client/server network library for multiplayer games
+
+Package: wnpp
+Severity: wishlist
+Owner: Glenn Fiedler <glenn@mas-bandwidth.com>
+X-Debbugs-Cc: debian-devel@lists.debian.org
+
+* Package name    : yojimbo
+  Version         : 1.6.1
+  Upstream Author : Más Bandwidth LLC
+* URL             : https://github.com/mas-bandwidth/yojimbo
+* License         : BSD-3-Clause
+  Programming Lang: C++
+  Description     : client/server network library for multiplayer games
+
+yojimbo is a network library for client/server games with dedicated
+servers: encrypted and authenticated UDP connections (via netcode),
+acks and packet fragmentation (via reliable), reliable-ordered and
+unreliable-unordered message channels over a bitpacked serializer (via
+serialize), and per-client memory silos so one client cannot starve
+another. Encryption and authentication are on by default. Stable and
+production ready, in use by shipped games for ten years.
+
+Build-depends on libserialize-dev, libreliable-dev and libnetcode-dev
+(ITPs filed separately); this upload follows their acceptance. The
+vendored copies of those libraries and of libsodium are stripped from
+the source tarball. I am the upstream author, will maintain the
+package, and am looking for a sponsor.

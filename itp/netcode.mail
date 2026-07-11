@@ -1,0 +1,29 @@
+To: submit@bugs.debian.org
+Subject: ITP: netcode -- secure client/server connections over UDP
+
+Package: wnpp
+Severity: wishlist
+Owner: Glenn Fiedler <glenn@mas-bandwidth.com>
+X-Debbugs-Cc: debian-devel@lists.debian.org
+
+* Package name    : netcode
+  Version         : 1.3.3
+  Upstream Author : Más Bandwidth LLC
+* URL             : https://github.com/mas-bandwidth/netcode
+* License         : BSD-3-Clause
+  Programming Lang: C
+  Description     : secure client/server connections over UDP
+
+netcode is a protocol and library for creating encrypted and
+authenticated client/server connections over UDP, designed for
+real-time games. Clients authenticate with short-lived connect tokens
+issued by a web backend, so game servers reject unauthenticated traffic
+before allocating any per-client state. The Debian package links the
+system libsodium; the vendored libsodium subset is stripped from the
+source tarball.
+
+I am the upstream author. netcode is a build dependency of yojimbo, a
+client/server network library for multiplayer games that I intend to
+package next (together with its other dependencies, serialize and
+reliable - ITPs filed separately). I will maintain the package and am
+looking for a sponsor.

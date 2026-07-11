@@ -98,26 +98,29 @@ One-time prerequisites (yours to do — they involve your identity and keys):
 
 Then, per wave:
 
-1. **File the ITPs** (drafts below) by mailing `submit@bugs.debian.org` —
-   all four the same day. The BTS replies with a bug number for each.
+1. **File the ITPs** by mailing `submit@bugs.debian.org` — all four the same
+   day. Ready-to-send copies are in [`itp/`](itp/) (same text as the drafts
+   below). The BTS replies with a bug number for each.
 2. **Record the bug numbers** in [`official/itp.env`](official/itp.env) and
    push — the changelogs' `Closes:` lines pick them up.
-3. **Run the `official` workflow** (it also runs on the push) and download
-   the `official-source-packages` artifact. Review the `*.lintian.txt`
-   reports.
-4. **Wave 1 — serialize, reliable, netcode in parallel.** On your Debian box,
-   for each:
+3. **Let the `official` workflow rebuild** (it runs on the push) and review
+   the `*.lintian.txt` reports in the `official-source-packages` artifact —
+   the two ITP-placeholder warnings should now be gone.
+4. **Wave 1 — serialize, reliable, netcode in parallel.** On your Debian box:
 
    ```sh
-   debsign <package>_<version>-1_source.changes
-   dput mentors <package>_<version>-1_source.changes
+   ./scripts/submit-to-mentors.sh wave1
    ```
 
-   Then file an RFS bug per package (`reportbug sponsorship-requests`, or
-   mail — mentors generates a template on the package page), noting the three
-   are a set and that yojimbo follows.
-5. **Wave 2 — yojimbo,** once all three have cleared NEW into unstable: same
-   debsign/dput/RFS steps.
+   (Downloads the latest artifact, refuses to run while the ITP placeholder
+   is still in the changelogs, then `debsign` + `dput mentors` each package.)
+   Then file an RFS bug per package (template below), noting the three are a
+   set and that yojimbo follows.
+5. **Wave 2 — yojimbo,** once all three have cleared NEW into unstable:
+
+   ```sh
+   ./scripts/submit-to-mentors.sh wave2
+   ```
 6. After acceptance, request **backports** to current stable if you want
    `apt install` to work there before Debian 14.
 
@@ -255,6 +258,53 @@ Build-depends on libserialize-dev, libreliable-dev and libnetcode-dev
 vendored copies of those libraries and of libsodium are stripped from
 the source tarball. I am the upstream author, will maintain the
 package, and am looking for a sponsor.
+```
+
+## RFS template
+
+One per package, mailed to `submit@bugs.debian.org` after the mentors upload
+(mentors also generates one on each package page). Subject lines:
+`RFS: serialize/1.4.3-1 [ITP] -- header-only bitpacking serializer for C++`,
+and correspondingly for the others (netcode and yojimbo use their `+ds`
+versions).
+
+```
+To: submit@bugs.debian.org
+Subject: RFS: <source>/<version> [ITP] -- <short description>
+
+Package: sponsorship-requests
+Severity: wishlist
+X-Debbugs-Cc: <ITP bug number>@bugs.debian.org
+
+Dear mentors,
+
+I am looking for a sponsor for my package "<source>":
+
+ * Package name     : <source>
+   Version          : <version>
+   Upstream contact : Glenn Fiedler <glenn@mas-bandwidth.com>
+ * URL              : https://github.com/mas-bandwidth/<source>
+ * License          : BSD-3-Clause
+   Section          : libdevel
+
+To access further information about this package, please visit:
+
+  https://mentors.debian.net/package/<source>/
+
+Changes for the initial release:
+
+  <source> (<version>) unstable; urgency=medium
+  .
+    * Initial release. (Closes: #<ITP bug number>)
+
+This package is one of four from the yojimbo game-networking stack
+(serialize, reliable, netcode, yojimbo), of which I am the upstream
+author. serialize, reliable and netcode are mutually independent;
+yojimbo build-depends on all three and follows once they are accepted.
+I would be glad to have the set sponsored together.
+
+Regards,
+Glenn Fiedler
 ```
 
 ## Finding a sponsor

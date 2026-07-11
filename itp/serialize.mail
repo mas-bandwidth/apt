@@ -1,0 +1,26 @@
+To: submit@bugs.debian.org
+Subject: ITP: serialize -- header-only bitpacking serializer for C++
+
+Package: wnpp
+Severity: wishlist
+Owner: Glenn Fiedler <glenn@mas-bandwidth.com>
+X-Debbugs-Cc: debian-devel@lists.debian.org
+
+* Package name    : serialize
+  Version         : 1.4.3
+  Upstream Author : Más Bandwidth LLC
+* URL             : https://github.com/mas-bandwidth/serialize
+* License         : BSD-3-Clause
+  Programming Lang: C++
+  Description     : header-only bitpacking serializer for C++
+
+serialize is a simple bitpacking serializer for C++. A single templated
+serialize function per object drives read, write and measure through the
+same code path, making read/write mismatches structurally hard to write.
+Values read from untrusted data are range-checked as they are decoded.
+
+I am the upstream author. serialize is a build dependency of yojimbo, a
+client/server network library for multiplayer games that I intend to
+package next (together with its other dependencies, reliable and
+netcode - ITPs filed separately). I will maintain the package and am
+looking for a sponsor.

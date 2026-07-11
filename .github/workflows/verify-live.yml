@@ -1,0 +1,57 @@
+# Canary: follow the README install instructions verbatim against the LIVE
+# published repository — add the key, add the sources entry, apt install
+# yojimbo — then compile and run a program against the installed packages.
+# This is the user's actual first-contact path, so it is tested exactly as
+# documented (minus sudo: these containers run as root).
+#
+# Runs on demand and weekly, so breakage in Pages, the signing key, or the
+# published indexes is noticed here before users hit it.
+name: verify live repo
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "43 10 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  install:
+    strategy:
+      fail-fast: false
+      matrix:
+        image: ["debian:12", "debian:13", "ubuntu:22.04", "ubuntu:24.04", "ubuntu:26.04"]
+        arch: [amd64, arm64]
+    runs-on: ${{ matrix.arch == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
+    container: ${{ matrix.image }}
+    env:
+      DEBIAN_FRONTEND: noninteractive
+    steps:
+      - name: install repository per README
+        run: |
+          apt-get update
+          apt-get install -y curl ca-certificates
+          install -d /etc/apt/keyrings
+          curl -fsSL https://mas-bandwidth.github.io/apt/mas-bandwidth-apt.asc \
+              -o /etc/apt/keyrings/mas-bandwidth-apt.asc
+          echo "deb [signed-by=/etc/apt/keyrings/mas-bandwidth-apt.asc] https://mas-bandwidth.github.io/apt $(. /etc/os-release && echo $VERSION_CODENAME) main" \
+              > /etc/apt/sources.list.d/mas-bandwidth.list
+          apt-get update
+          apt-get install -y yojimbo
+
+      - name: compile and run against installed packages
+        run: |
+          apt-get install -y g++
+          cat > /tmp/use.cpp <<'EOF'
+          #include <yojimbo.h>
+          int main() {
+              if (!InitializeYojimbo()) return 1;
+              ShutdownYojimbo();
+              return 0;
+          }
+          EOF
+          g++ -DNDEBUG -O2 -o /tmp/use /tmp/use.cpp \
+              -lyojimbo -lnetcode -lreliable -lsodium -lpthread -lm
+          /tmp/use
+          echo "LIVE REPO OK on $(. /etc/os-release && echo "$PRETTY_NAME") $(dpkg --print-architecture)"
