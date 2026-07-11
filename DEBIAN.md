@@ -67,9 +67,14 @@ Notes for sponsor conversations:
   developers consume these libraries.
 - The **`yojimbo` metapackage** (so `apt install yojimbo` works) is a
   convenience; drop it without argument if the sponsor or ftpmaster objects.
-- **Names**: `serialize` and `reliable` are generic source-package names;
-  check https://packages.debian.org/search for collisions before filing, and
-  treat a rename (e.g. `mas-serialize`) as a cheap concession if asked.
+- **Names**: verified 2026-07-10 — the source names `serialize`, `reliable`,
+  `netcode`, `yojimbo` and the binary names `libserialize-dev`,
+  `libreliable-dev`, `libnetcode-dev`, `libyojimbo-dev`, `yojimbo` are all
+  unclaimed in every Debian suite (sources.debian.org, packages.debian.org),
+  and no WNPP bug claims any of them. `serialize` and `reliable` are still
+  generic-sounding, so human feedback on the ITPs remains possible; treat a
+  source-package rename (e.g. `mas-serialize`) as a cheap concession if
+  asked.
 
 ## Submission runbook
 
