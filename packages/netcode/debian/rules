@@ -1,0 +1,13 @@
+#!/usr/bin/make -f
+# netcode derives its release mode from NDEBUG; Debian builds with
+# CMAKE_BUILD_TYPE unset, so supply it explicitly.
+export DEB_CPPFLAGS_MAINT_APPEND = -DNDEBUG
+
+%:
+	dh $@ --buildsystem=cmake
+
+# Link the system libsodium instead of the vendored subset — the vendored
+# copy exists so source builds have zero dependencies; package builds must
+# use the distro libsodium so it receives distro security updates.
+override_dh_auto_configure:
+	dh_auto_configure -- -DNETCODE_SYSTEM_SODIUM=ON

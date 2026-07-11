@@ -1,0 +1,11 @@
+#!/bin/sh
+# autopkgtest: the installed serialize.h must compile in a plain translation
+# unit with no other include paths. -DNDEBUG matches release usage.
+set -e
+cd "$AUTOPKGTEST_TMP"
+cat > use.cpp <<'SRC'
+#include <serialize.h>
+int main() { return 0; }
+SRC
+g++ -DNDEBUG -c use.cpp
+echo OK

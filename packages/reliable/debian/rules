@@ -1,0 +1,8 @@
+#!/usr/bin/make -f
+# reliable derives its release mode from NDEBUG; Debian builds with
+# CMAKE_BUILD_TYPE unset, so supply it explicitly.
+export DEB_CPPFLAGS_MAINT_APPEND = -DNDEBUG
+
+# dh_auto_test runs the upstream ctest suite (test, fuzz, soak, fuzz_target).
+%:
+	dh $@ --buildsystem=cmake

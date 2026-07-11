@@ -1,0 +1,16 @@
+#!/bin/sh
+# autopkgtest: compile and link against the installed libreliable, then
+# initialize and shut down the library.
+set -e
+cd "$AUTOPKGTEST_TMP"
+cat > use.c <<'SRC'
+#include <reliable.h>
+int main() {
+    if (reliable_init() != RELIABLE_OK) return 1;
+    reliable_term();
+    return 0;
+}
+SRC
+gcc -DNDEBUG -o use use.c -lreliable -lm
+./use
+echo OK

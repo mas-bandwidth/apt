@@ -1,0 +1,97 @@
+# Build .debs for every supported distro and architecture, smoke test them,
+# and publish the signed apt repository to GitHub Pages.
+#
+# Packages are built inside distro containers so each suite's packages are
+# built against that distro's toolchain and libsodium. arm64 uses GitHub's
+# free arm runners for public repos.
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        image: ["debian:12", "debian:13", "ubuntu:22.04", "ubuntu:24.04", "ubuntu:26.04"]
+        arch: [amd64, arm64]
+    runs-on: ${{ matrix.arch == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
+    container: ${{ matrix.image }}
+    env:
+      DEBIAN_FRONTEND: noninteractive
+    steps:
+      - name: install build tools
+        run: |
+          apt-get update
+          apt-get install -y build-essential debhelper cmake libsodium-dev \
+            devscripts git curl ca-certificates
+
+      - uses: actions/checkout@v4
+
+      - name: build all packages
+        run: ./scripts/build-all.sh
+
+      - name: smoke test
+        run: ./scripts/smoke-test.sh
+
+      - name: distro codename
+        id: dist
+        run: echo "codename=$(. /etc/os-release && echo "$VERSION_CODENAME")" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: debs-${{ steps.dist.outputs.codename }}-${{ matrix.arch }}
+          path: out/*.deb
+          if-no-files-found: error
+
+  publish:
+    # PR builds validate the packages but never publish.
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: install reprepro
+        run: sudo apt-get update && sudo apt-get install -y reprepro
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: incoming
+
+      - name: import signing key
+        env:
+          APT_SIGNING_KEY: ${{ secrets.APT_SIGNING_KEY }}
+        run: |
+          [ -n "$APT_SIGNING_KEY" ] || { echo "APT_SIGNING_KEY secret is not set — run scripts/generate-signing-key.sh (see README)"; exit 1; }
+          echo "$APT_SIGNING_KEY" | gpg --batch --import
+
+      - name: assemble and sign apt repository
+        run: ./scripts/make-apt-repo.sh incoming site
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - id: deployment
+        uses: actions/deploy-pages@v4

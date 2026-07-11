@@ -1,0 +1,51 @@
+# Daily: compare versions.env against the latest upstream GitHub releases
+# and open a bump PR when something new has shipped. Merging that PR
+# triggers build.yml, which rebuilds and republishes the apt repository.
+#
+# Requires "Allow GitHub Actions to create and approve pull requests" in
+# the repository's Actions settings; falls back to printing the diff in the
+# job log if PR creation is not permitted.
+name: check releases
+
+on:
+  schedule:
+    - cron: "17 9 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: check for new upstream releases
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if ./scripts/check-releases.sh --update; then
+            echo "stale=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "stale=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: open bump PR
+        if: steps.check.outputs.stale == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          BRANCH="bump-versions-$(date +%Y%m%d)"
+          git checkout -b "$BRANCH"
+          git add versions.env
+          git commit -m "Bump package versions to latest upstream releases"
+          git push -u origin "$BRANCH" --force
+          gh pr create --base main --head "$BRANCH" \
+            --title "Bump package versions to latest upstream releases" \
+            --body "Automated bump from check-releases.yml. Merging rebuilds and republishes the apt repository." \
+            || { echo "could not create PR (already open, or Actions lacks PR permission)"; git diff HEAD~1; }

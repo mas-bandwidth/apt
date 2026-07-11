@@ -1,0 +1,49 @@
+# Build the official-Debian-track source packages on Debian unstable,
+# validate them (full build incl. upstream test suites, autopkgtest files,
+# lintian --fail-on error) and upload the sponsor-ready source packages as
+# an artifact. Signing and uploading to mentors.debian.net is manual — see
+# DEBIAN.md.
+name: official
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "official/**"
+      - "versions.env"
+      - "scripts/build-official.sh"
+      - ".github/workflows/official.yml"
+  pull_request:
+    paths:
+      - "official/**"
+      - "versions.env"
+      - "scripts/build-official.sh"
+      - ".github/workflows/official.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-packages:
+    runs-on: ubuntu-24.04
+    container: debian:sid
+    env:
+      DEBIAN_FRONTEND: noninteractive
+    steps:
+      - name: install build tools
+        run: |
+          apt-get update
+          apt-get install -y build-essential debhelper cmake libsodium-dev \
+            devscripts lintian git curl ca-certificates xz-utils
+
+      - uses: actions/checkout@v4
+
+      - name: build and validate source packages
+        run: ./scripts/build-official.sh
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: official-source-packages
+          path: out-official/
+          if-no-files-found: error

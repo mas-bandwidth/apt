@@ -1,0 +1,21 @@
+#!/usr/bin/make -f
+# yojimbo derives its release mode from NDEBUG; Debian builds with
+# CMAKE_BUILD_TYPE unset, so supply it explicitly.
+export DEB_CPPFLAGS_MAINT_APPEND = -DNDEBUG
+
+%:
+	dh $@ --buildsystem=cmake
+
+# YOJIMBO_SYSTEM_DEPS: build against the installed libserialize-dev,
+# libreliable-dev, libnetcode-dev and libsodium-dev instead of the
+# vendored copies. tlsf stays built in — it is a private implementation
+# detail of yojimbo's per-client allocators, not a public dependency.
+override_dh_auto_configure:
+	dh_auto_configure -- -DYOJIMBO_SYSTEM_DEPS=ON
+
+# yojimbo has no ctest wiring; run its test binary directly (executables
+# are written to bin/ at the source root). Must print "ALL TESTS PASS".
+override_dh_auto_test:
+ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
+	$(CURDIR)/bin/test
+endif

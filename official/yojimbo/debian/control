@@ -1,0 +1,43 @@
+Source: yojimbo
+Section: libdevel
+Priority: optional
+Maintainer: Glenn Fiedler <glenn@mas-bandwidth.com>
+Build-Depends: debhelper-compat (= 13),
+               cmake,
+               libserialize-dev (>= 1.4),
+               libreliable-dev (>= 1.3),
+               libnetcode-dev (>= 1.3.2),
+               libsodium-dev
+Standards-Version: 4.7.0
+Homepage: https://github.com/mas-bandwidth/yojimbo
+Vcs-Git: https://github.com/mas-bandwidth/yojimbo.git
+Vcs-Browser: https://github.com/mas-bandwidth/yojimbo
+Rules-Requires-Root: no
+
+Package: libyojimbo-dev
+Architecture: any
+Multi-Arch: same
+Depends: libserialize-dev (>= 1.4),
+         libreliable-dev (>= 1.3),
+         libnetcode-dev (>= 1.3.2),
+         libsodium-dev,
+         ${misc:Depends}
+Description: client/server network library for multiplayer games (development files)
+ yojimbo is a network library for client/server games with dedicated
+ servers: encrypted and authenticated UDP connections (via netcode),
+ acks and packet fragmentation (via reliable), reliable-ordered and
+ unreliable-unordered message channels over a bitpacked serializer
+ (via serialize), and per-client memory silos so one client cannot
+ starve another.
+ .
+ This package contains the static library and the yojimbo headers.
+
+Package: yojimbo
+Architecture: all
+Multi-Arch: foreign
+Depends: libyojimbo-dev (>= ${source:Version}), ${misc:Depends}
+Description: client/server network library for multiplayer games (metapackage)
+ Convenience metapackage so that `apt install yojimbo` installs the
+ yojimbo development files and their dependencies.
+ .
+ The actual library is in libyojimbo-dev.

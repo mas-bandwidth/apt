@@ -1,0 +1,23 @@
+Source: reliable
+Section: libdevel
+Priority: optional
+Maintainer: Glenn Fiedler <glenn@mas-bandwidth.com>
+Build-Depends: debhelper-compat (= 13), cmake
+Standards-Version: 4.7.0
+Homepage: https://github.com/mas-bandwidth/reliable
+Vcs-Git: https://github.com/mas-bandwidth/reliable.git
+Vcs-Browser: https://github.com/mas-bandwidth/reliable
+Rules-Requires-Root: no
+
+Package: libreliable-dev
+Architecture: any
+Multi-Arch: same
+Depends: ${misc:Depends}
+Description: packet acknowledgement system for UDP protocols (development files)
+ reliable is a simple packet acknowledgement system for UDP-based
+ protocols. It tells you which packets the other side received, measures
+ round trip time, packet loss and bandwidth, and fragments and reassembles
+ packets larger than MTU.
+ .
+ This package contains the static library, the reliable.h header and a
+ pkg-config file.

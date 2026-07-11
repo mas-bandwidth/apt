@@ -1,0 +1,17 @@
+#!/bin/sh
+# autopkgtest: compile and link against the installed libyojimbo and its
+# whole dependency chain, then initialize and shut down the library.
+# -DNDEBUG matches the packaged release build.
+set -e
+cd "$AUTOPKGTEST_TMP"
+cat > use.cpp <<'SRC'
+#include <yojimbo.h>
+int main() {
+    if (!InitializeYojimbo()) return 1;
+    ShutdownYojimbo();
+    return 0;
+}
+SRC
+g++ -DNDEBUG -o use use.cpp -lyojimbo -lnetcode -lreliable -lsodium -lpthread -lm
+./use
+echo OK

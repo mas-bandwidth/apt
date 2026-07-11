@@ -1,0 +1,22 @@
+Source: serialize
+Section: libdevel
+Priority: optional
+Maintainer: Glenn Fiedler <glenn@mas-bandwidth.com>
+Build-Depends: debhelper-compat (= 13), cmake
+Standards-Version: 4.7.0
+Homepage: https://github.com/mas-bandwidth/serialize
+Vcs-Git: https://github.com/mas-bandwidth/serialize.git
+Vcs-Browser: https://github.com/mas-bandwidth/serialize
+Rules-Requires-Root: no
+
+Package: libserialize-dev
+Architecture: all
+Multi-Arch: foreign
+Depends: ${misc:Depends}
+Description: header-only bitpacking serializer for C++ (development files)
+ serialize is a simple bitpacking serializer for C++. A single templated
+ serialize function per object drives read, write and measure through the
+ same code path, making read/write mismatches structurally hard to write.
+ Values read from untrusted data are range-checked as they are decoded.
+ .
+ This package contains the serialize.h header and CMake package files.

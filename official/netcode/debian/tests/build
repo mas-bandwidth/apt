@@ -1,0 +1,16 @@
+#!/bin/sh
+# autopkgtest: compile and link against the installed libnetcode and the
+# system libsodium, then initialize and shut down the library.
+set -e
+cd "$AUTOPKGTEST_TMP"
+cat > use.c <<'SRC'
+#include <netcode.h>
+int main() {
+    if (netcode_init() != NETCODE_OK) return 1;
+    netcode_term();
+    return 0;
+}
+SRC
+gcc -DNDEBUG -o use use.c -lnetcode -lsodium
+./use
+echo OK

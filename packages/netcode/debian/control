@@ -1,0 +1,24 @@
+Source: netcode
+Section: libdevel
+Priority: optional
+Maintainer: Glenn Fiedler <glenn@mas-bandwidth.com>
+Build-Depends: debhelper-compat (= 13), cmake, libsodium-dev
+Standards-Version: 4.7.0
+Homepage: https://github.com/mas-bandwidth/netcode
+Vcs-Git: https://github.com/mas-bandwidth/netcode.git
+Vcs-Browser: https://github.com/mas-bandwidth/netcode
+Rules-Requires-Root: no
+
+Package: libnetcode-dev
+Architecture: any
+Multi-Arch: same
+Depends: libsodium-dev, ${misc:Depends}
+Description: secure client/server connections over UDP (development files)
+ netcode is a protocol for creating encrypted and authenticated
+ client/server connections over UDP, designed for real-time games.
+ Clients authenticate with short-lived connect tokens issued by a web
+ backend, so game servers reject unauthenticated traffic before
+ allocating any per-client state.
+ .
+ This package contains the static library and the netcode.h header,
+ built against the system libsodium (consumers link with -lsodium).

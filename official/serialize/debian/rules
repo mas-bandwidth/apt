@@ -1,0 +1,12 @@
+#!/usr/bin/make -f
+# serialize derives its release mode from NDEBUG; Debian builds with
+# CMAKE_BUILD_TYPE unset, so supply it explicitly.
+export DEB_CPPFLAGS_MAINT_APPEND = -DNDEBUG
+
+%:
+	dh $@ --buildsystem=cmake
+
+# /usr/lib/cmake rather than the multiarch libdir: this package is
+# Architecture: all and CMake searches /usr/lib/cmake on every arch.
+override_dh_auto_configure:
+	dh_auto_configure -- -DCMAKE_INSTALL_LIBDIR=lib
