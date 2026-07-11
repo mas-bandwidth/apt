@@ -21,11 +21,16 @@ for name in serialize reliable netcode yojimbo; do
 
     # Publish all debs from the amd64 build; only the arch-specific debs
     # from other architectures (their arch-all debs are local-only
-    # duplicates and would collide in the apt repo pool).
+    # duplicates and would collide in the apt repo pool). Packages that are
+    # arch-all only (serialize) produce nothing to publish here.
     if [ "$ARCH" = "amd64" ]; then
         cp "$REPO_ROOT"/build/"$name"/*.deb "$REPO_ROOT/out/"
     else
-        cp "$REPO_ROOT"/build/"$name"/*_"$ARCH".deb "$REPO_ROOT/out/"
+        for deb in "$REPO_ROOT"/build/"$name"/*_"$ARCH".deb; do
+            if [ -e "$deb" ]; then
+                cp "$deb" "$REPO_ROOT/out/"
+            fi
+        done
     fi
 done
 
