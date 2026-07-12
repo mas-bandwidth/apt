@@ -7,7 +7,7 @@ Owner: Glenn Fiedler <glenn@mas-bandwidth.com>
 X-Debbugs-Cc: debian-devel@lists.debian.org
 
 * Package name    : yojimbo
-  Version         : 1.6.1
+  Version         : 1.6.3
   Upstream Author : Más Bandwidth LLC
 * URL             : https://github.com/mas-bandwidth/yojimbo
 * License         : BSD-3-Clause
