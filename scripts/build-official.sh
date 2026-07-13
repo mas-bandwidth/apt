@@ -95,7 +95,7 @@ EOF
     apt-get install -y "$WORK"/*.deb
 
     cp "$ORIG" "${name}_${UV}-1.debian.tar.xz" "${name}_${UV}-1.dsc" \
-       "${name}_${UV}-1_source.changes" "$OUT/"
+       "${name}_${UV}-1_source.buildinfo" "${name}_${UV}-1_source.changes" "$OUT/"
 done
 
 echo
