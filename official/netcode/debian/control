@@ -10,7 +10,7 @@ Vcs-Browser: https://github.com/mas-bandwidth/netcode
 Package: libnetcode-dev
 Architecture: any
 Multi-Arch: same
-Depends: libsodium-dev, ${misc:Depends}
+Depends: libsodium-dev
 Description: secure client/server connections over UDP (development files)
  netcode is a protocol for creating encrypted and authenticated
  client/server connections over UDP, designed for real-time games.
