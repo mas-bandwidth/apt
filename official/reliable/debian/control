@@ -10,7 +10,6 @@ Vcs-Browser: https://github.com/mas-bandwidth/reliable
 Package: libreliable-dev
 Architecture: any
 Multi-Arch: same
-Depends: ${misc:Depends}
 Description: packet acknowledgement system for UDP protocols (development files)
  reliable is a simple packet acknowledgement system for UDP-based
  protocols. It tells you which packets the other side received, measures

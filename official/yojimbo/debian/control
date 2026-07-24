@@ -18,8 +18,7 @@ Multi-Arch: same
 Depends: libserialize-dev (>= 1.4),
          libreliable-dev (>= 1.3),
          libnetcode-dev (>= 1.3.2),
-         libsodium-dev,
-         ${misc:Depends}
+         libsodium-dev
 Description: client/server network library for multiplayer games (development files)
  yojimbo is a network library for client/server games with dedicated
  servers: encrypted and authenticated UDP connections (via netcode),
@@ -33,7 +32,7 @@ Description: client/server network library for multiplayer games (development fi
 Package: yojimbo
 Architecture: all
 Multi-Arch: foreign
-Depends: libyojimbo-dev (>= ${source:Version}), ${misc:Depends}
+Depends: libyojimbo-dev (>= ${source:Version})
 Description: client/server network library for multiplayer games (metapackage)
  Convenience metapackage so that `apt install yojimbo` installs the
  yojimbo development files and their dependencies.

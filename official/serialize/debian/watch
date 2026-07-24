@@ -1,3 +1,3 @@
-version=4
+version=5
 opts=filenamemangle=s/.*\/v?(\d\S*)\.tar\.gz/serialize-$1.tar.gz/ \
   https://github.com/mas-bandwidth/serialize/tags .*/v?(\d\S*)\.tar\.gz
