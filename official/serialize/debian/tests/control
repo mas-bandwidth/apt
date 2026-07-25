@@ -1,3 +1,2 @@
 Tests: build
 Depends: @, build-essential
-Restrictions: superficial
