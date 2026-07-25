@@ -2,6 +2,8 @@ build/
 build-official/
 out/
 out-official/
+out-official-binaries/
+out-autopkgtest/
 incoming/
 site/
 *.secret.asc

@@ -61,6 +61,37 @@ submissions follow).
   source-only build, then `lintian -I -E --pedantic --fail-on error` — and
   uploads sponsor-ready source packages as the `official-source-packages`
   artifact, lintian reports included.
+- **CI autopkgtest**: the workflow's second job runs
+  [`scripts/run-autopkgtest.sh`](scripts/run-autopkgtest.sh), which runs the
+  real `autopkgtest` for all four packages against the binaries the build job
+  produced, and fails the workflow if any test does not pass. Full logs are in
+  the `autopkgtest-logs` artifact.
+
+  What it covers: the tests are executed by autopkgtest itself, on
+  **debian:sid**, against the **binary packages as installed by apt** —
+  so a broken `debian/tests/control`, an unsatisfiable test dependency, a
+  header installed to the wrong path or a missing symbol at link time all
+  fail the job. Test dependencies are resolved by apt from a testbed that
+  starts without a compiler, so `Depends: @, build-essential` is genuinely
+  checked rather than assumed.
+
+  What it does not cover, and what a sponsor should know:
+
+  - **The testbed is the CI container, via autopkgtest's `null` runner.**
+    No isolation, no reboot support, tests run as root. A test that only
+    passes because it is root, or that leaves the system dirty, would not be
+    caught here; Debian's infrastructure uses lxc/qemu testbeds.
+  - **The four packages are served to apt from a local repository** built
+    from the freshly built `.debs`, because `libserialize-dev`,
+    `libreliable-dev` and `libnetcode-dev` are not in the archive yet. So
+    yojimbo's dependency chain is satisfied by our own artifacts, not by
+    Debian's. Once the packages are accepted this stops being a difference.
+  - **sid only, amd64 only.** No testing/stable, no other architectures, no
+    `arch:all` on a foreign arch, none of the archive-wide rebuild or
+    migration testing that ci.debian.net does. Multi-Arch claims are not
+    exercised.
+  - It runs on our pinned upstream versions from `versions.env`, not on
+    whatever the archive currently holds.
 
 Notes for sponsor conversations:
 

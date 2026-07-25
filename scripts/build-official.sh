@@ -4,6 +4,11 @@
 # upstream test suites) and lintian, and collect sponsor-ready source
 # packages into out-official/.
 #
+# The binary packages from the full build, and the source packages carrying
+# debian/tests/, are also collected into out-official-binaries/ so that
+# scripts/run-autopkgtest.sh can run the autopkgtests against them without
+# building anything a second time.
+#
 # Run inside a debian:sid container with build-essential, debhelper, cmake,
 # libsodium-dev, devscripts and lintian installed — this is what the
 # "official" GitHub Actions workflow does.
@@ -15,12 +20,17 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 OUT="$REPO_ROOT/out-official"
+# The binary packages, and the source they were built from, for
+# scripts/run-autopkgtest.sh to test. Not sponsor-facing — mentors.debian.net
+# takes the source-only upload from $OUT. Keeping this separate means the
+# autopkgtest job reuses these builds instead of repeating them.
+OUTBIN="$REPO_ROOT/out-official-binaries"
 
 source "$REPO_ROOT/versions.env"
 source "$REPO_ROOT/official/itp.env"
 
-rm -rf "$OUT"
-mkdir -p "$OUT"
+rm -rf "$OUT" "$OUTBIN"
+mkdir -p "$OUT" "$OUTBIN"
 
 for name in serialize reliable netcode yojimbo; do
     UPPER="$(echo "$name" | tr '[:lower:]' '[:upper:]')"
@@ -81,6 +91,22 @@ EOF
     # test suites (dh_auto_test / yojimbo's bin/test).
     dpkg-buildpackage -us -uc
 
+    cd "$WORK"
+
+    # Stash what autopkgtest needs before the source-only build below rewrites
+    # the .dsc and .debian.tar.xz: the binaries under test, plus the source
+    # package that carries debian/tests/. Exactly one .changes exists at this
+    # point (the full build's) — the _source.changes does not exist yet.
+    BIN_CHANGES=("${name}_${UV}-1_"*.changes)
+    [ "${#BIN_CHANGES[@]}" -eq 1 ] || {
+        echo "error: expected one binary .changes for $name, got: ${BIN_CHANGES[*]}" >&2
+        exit 1
+    }
+    cp "$ORIG" "${name}_${UV}-1.dsc" "${name}_${UV}-1.debian.tar.xz" \
+       "${name}_${UV}-1_"*.buildinfo "${BIN_CHANGES[0]}" "$WORK"/*.deb "$OUTBIN/"
+
+    cd "$SRCDIR"
+
     # Source-only build: what actually gets signed and uploaded to mentors.
     dpkg-buildpackage -S -us -uc
 
@@ -101,3 +127,6 @@ done
 echo
 echo "Sponsor-ready source packages in $OUT:"
 ls -l "$OUT"
+echo
+echo "Binary packages for scripts/run-autopkgtest.sh in $OUTBIN:"
+ls -l "$OUTBIN"
