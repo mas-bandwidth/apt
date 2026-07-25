@@ -9,8 +9,8 @@ Build-Depends: debhelper-compat (= 14),
                libsodium-dev
 Standards-Version: 4.7.4
 Homepage: https://github.com/mas-bandwidth/yojimbo
-Vcs-Git: https://github.com/mas-bandwidth/yojimbo.git
-Vcs-Browser: https://github.com/mas-bandwidth/yojimbo
+Vcs-Git: https://salsa.debian.org/gafferongames/yojimbo.git
+Vcs-Browser: https://salsa.debian.org/gafferongames/yojimbo
 
 Package: libyojimbo-dev
 Architecture: any

@@ -4,8 +4,8 @@ Maintainer: Glenn Fiedler <glenn@mas-bandwidth.com>
 Build-Depends: debhelper-compat (= 14), cmake
 Standards-Version: 4.7.4
 Homepage: https://github.com/mas-bandwidth/serialize
-Vcs-Git: https://github.com/mas-bandwidth/serialize.git
-Vcs-Browser: https://github.com/mas-bandwidth/serialize
+Vcs-Git: https://salsa.debian.org/gafferongames/serialize.git
+Vcs-Browser: https://salsa.debian.org/gafferongames/serialize
 
 Package: libserialize-dev
 Architecture: all

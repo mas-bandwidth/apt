@@ -4,8 +4,8 @@ Maintainer: Glenn Fiedler <glenn@mas-bandwidth.com>
 Build-Depends: debhelper-compat (= 14), cmake, libsodium-dev
 Standards-Version: 4.7.4
 Homepage: https://github.com/mas-bandwidth/netcode
-Vcs-Git: https://github.com/mas-bandwidth/netcode.git
-Vcs-Browser: https://github.com/mas-bandwidth/netcode
+Vcs-Git: https://salsa.debian.org/gafferongames/netcode.git
+Vcs-Browser: https://salsa.debian.org/gafferongames/netcode
 
 Package: libnetcode-dev
 Architecture: any
