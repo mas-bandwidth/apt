@@ -1,8 +1,8 @@
 # Build the official-Debian-track source packages on Debian unstable,
-# validate them (full build incl. upstream test suites, autopkgtest files,
-# lintian --fail-on error) and upload the sponsor-ready source packages as
-# an artifact. Signing and uploading to mentors.debian.net is manual — see
-# DEBIAN.md.
+# validate them (full build incl. upstream test suites, lintian --fail-on
+# error), actually run each package's autopkgtest against the built binaries,
+# and upload the sponsor-ready source packages as an artifact. Signing and
+# uploading to mentors.debian.net is manual — see DEBIAN.md.
 name: official
 
 on:
@@ -12,12 +12,14 @@ on:
       - "official/**"
       - "versions.env"
       - "scripts/build-official.sh"
+      - "scripts/run-autopkgtest.sh"
       - ".github/workflows/official.yml"
   pull_request:
     paths:
       - "official/**"
       - "versions.env"
       - "scripts/build-official.sh"
+      - "scripts/run-autopkgtest.sh"
       - ".github/workflows/official.yml"
   workflow_dispatch:
 
@@ -47,3 +49,60 @@ jobs:
           name: official-source-packages
           path: out-official/
           if-no-files-found: error
+
+      # Binaries + the source they came from, so the autopkgtest job below can
+      # test them without repeating the build.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: official-binary-packages
+          path: out-official-binaries/
+          if-no-files-found: error
+
+  # Run the autopkgtests in official/*/debian/tests/ for real. Before this job
+  # existed nothing ever executed them — the job above builds and lintians, and
+  # lintian does not run tests. See scripts/run-autopkgtest.sh for why the null
+  # runner, and DEBIAN.md for what this does and does not cover.
+  #
+  # One package per job, so each gets a fresh container. The null runner cannot
+  # undo what a test installs, so sharing one container would mean every
+  # package after the first was tested in a testbed already holding the
+  # previous package's test dependencies.
+  autopkgtest:
+    needs: source-packages
+    runs-on: ubuntu-24.04
+    container: debian:sid
+    strategy:
+      fail-fast: false
+      matrix:
+        package: [serialize, reliable, netcode, yojimbo]
+    env:
+      DEBIAN_FRONTEND: noninteractive
+    steps:
+      # --no-install-recommends deliberately: the testbed must start without a
+      # compiler so that a package whose debian/tests/control forgets to depend
+      # on build-essential fails here instead of passing by accident. Only true
+      # because each package gets its own container — see above.
+      - name: install autopkgtest
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends \
+            autopkgtest dpkg-dev apt-utils git ca-certificates
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: official-binary-packages
+          path: out-official-binaries/
+
+      - name: run autopkgtest
+        run: ./scripts/run-autopkgtest.sh "${{ matrix.package }}"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: autopkgtest-logs-${{ matrix.package }}
+          path: |
+            out-autopkgtest/
+            !out-autopkgtest/local-apt-repo/**
+          if-no-files-found: warn
