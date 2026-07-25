@@ -4,8 +4,8 @@ Maintainer: Glenn Fiedler <glenn@mas-bandwidth.com>
 Build-Depends: debhelper-compat (= 14), cmake
 Standards-Version: 4.7.4
 Homepage: https://github.com/mas-bandwidth/reliable
-Vcs-Git: https://github.com/mas-bandwidth/reliable.git
-Vcs-Browser: https://github.com/mas-bandwidth/reliable
+Vcs-Git: https://salsa.debian.org/gafferongames/reliable.git
+Vcs-Browser: https://salsa.debian.org/gafferongames/reliable
 
 Package: libreliable-dev
 Architecture: any
