@@ -47,9 +47,13 @@ submissions follow).
   is compiled into libyojimbo as a private implementation detail of the
   per-client allocators, is not packaged separately in Debian, and is
   documented in `debian/copyright`; be ready to justify this to ftpmaster.
-- **autopkgtests** (`debian/tests/`): each package compiles (and, except
-  header-only serialize, links and runs) a program against the installed
-  package — Debian's CI runs these continuously once the packages are in.
+- **autopkgtests** (`debian/tests/`): each package compiles, links and runs a
+  program against the installed package — Debian's CI runs these continuously
+  once the packages are in. serialize's test round-trips a struct through
+  `WriteStream`/`ReadStream` and asserts that an integer encoded outside its
+  declared range is rejected on read. reliable's, netcode's and yojimbo's
+  still only initialize and shut down the library; deepening those is
+  outstanding work.
 - **DEP-12 upstream metadata** (`debian/upstream/metadata`).
 - **CI validation**: the [`official`](.github/workflows/official.yml)
   workflow builds everything on `debian:sid` — full binary build (running the

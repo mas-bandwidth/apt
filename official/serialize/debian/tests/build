@@ -1,11 +1,77 @@
 #!/bin/sh
-# autopkgtest: the installed serialize.h must compile in a plain translation
-# unit with no other include paths. -DNDEBUG matches release usage.
+# autopkgtest: round-trip a value through the installed serialize.h and check
+# that a read of out-of-range data is rejected. -DNDEBUG matches release usage.
 set -e
 cd "$AUTOPKGTEST_TMP"
 cat > use.cpp <<'SRC'
 #include <serialize.h>
-int main() { return 0; }
+#include <stdio.h>
+#include <string.h>
+
+struct Payload
+{
+    int32_t  id;
+    uint32_t flags;
+    float    scale;
+    bool     active;
+
+    template <typename Stream> bool Serialize( Stream & stream )
+    {
+        serialize_int( stream, id, -1000, 1000 );
+        serialize_bits( stream, flags, 32 );
+        serialize_float( stream, scale );
+        serialize_bool( stream, active );
+        return true;
+    }
+};
+
+int main()
+{
+    uint8_t buffer[256] = { 0 };
+
+    Payload in;
+    in.id = -437;
+    in.flags = 0xDEADBEEF;
+    in.scale = 0.5f;
+    in.active = true;
+
+    serialize::WriteStream writeStream( buffer, sizeof( buffer ) );
+    if ( !in.Serialize( writeStream ) ) { printf( "write failed\n" ); return 1; }
+    writeStream.Flush();
+    const int64_t written = writeStream.GetBytesProcessed();
+
+    Payload out;
+    memset( &out, 0, sizeof( out ) );
+    serialize::ReadStream readStream( buffer, (int) written );
+    if ( !out.Serialize( readStream ) ) { printf( "read failed\n" ); return 1; }
+    const int64_t read = readStream.GetBytesProcessed();
+
+    if ( written != read ) { printf( "byte count mismatch\n" ); return 1; }
+    if ( out.id != in.id || out.flags != in.flags ||
+         out.scale != in.scale || out.active != in.active )
+    {
+        printf( "value mismatch\n" );
+        return 1;
+    }
+
+    // bits_required(0,5) is 3 bits, so a hostile packet can encode 7.
+    // reading it back with max 5 must be rejected, not clamped.
+    uint8_t hostile[4 + 8] = { 0 };
+    serialize::WriteStream ws( hostile, 8 );
+    uint32_t seven = 7;
+    ws.SerializeBits( seven, 3 );
+    ws.Flush();
+    serialize::ReadStream rs( hostile, 4 );
+    int32_t value = 0;
+    if ( rs.SerializeInteger( value, 0, 5 ) != false )
+    {
+        printf( "out-of-range read was not rejected\n" );
+        return 1;
+    }
+
+    return 0;
+}
 SRC
-g++ -DNDEBUG -c use.cpp
+g++ -DNDEBUG -o use use.cpp
+./use
 echo OK
