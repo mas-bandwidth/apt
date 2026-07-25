@@ -1,6 +1,17 @@
 #!/usr/bin/env bash
-# Run the real autopkgtest suite for every official-track package against the
-# binary packages scripts/build-official.sh produced.
+# Run the real autopkgtest suite for the named official-track packages against
+# the binary packages scripts/build-official.sh produced. With no arguments,
+# runs all four.
+#
+#   ./scripts/run-autopkgtest.sh            # all four, one after another
+#   ./scripts/run-autopkgtest.sh yojimbo    # just one
+#
+# The workflow passes one package per job so that each gets a container of its
+# own. That matters: the null runner cannot revert what a test installs, so
+# running all four in one container would leave the second package onwards
+# testing against a testbed already carrying the previous package's test
+# dependencies — build-essential would always be present by then, and a
+# debian/tests/control that forgot to depend on it would still pass.
 #
 # Until this existed, official/*/debian/tests/ had never been executed by
 # anything: the official workflow built the source packages and ran lintian,
@@ -31,6 +42,16 @@ BIN="$REPO_ROOT/out-official-binaries"
 OUT="$REPO_ROOT/out-autopkgtest"
 LOCAL_REPO="$OUT/local-apt-repo"
 
+ALL_PACKAGES=(serialize reliable netcode yojimbo)
+PACKAGES=("$@")
+[ "${#PACKAGES[@]}" -gt 0 ] || PACKAGES=("${ALL_PACKAGES[@]}")
+for want in "${PACKAGES[@]}"; do
+    case " ${ALL_PACKAGES[*]} " in
+        *" $want "*) ;;
+        *) echo "error: unknown package '$want'" >&2; exit 1 ;;
+    esac
+done
+
 command -v autopkgtest >/dev/null 2>&1 || {
     echo "error: autopkgtest is not installed (apt-get install autopkgtest)" >&2
     exit 1
@@ -49,9 +70,10 @@ echo
 
 # yojimbo Depends on libserialize-dev, libreliable-dev and libnetcode-dev,
 # none of which are in the Debian archive yet — that is what the ITPs are for.
-# Serving all four packages' .debs from a local apt repository is what lets
-# apt satisfy that chain inside the testbed. It stands in for the archive the
-# packages will live in once accepted; see the coverage caveats in DEBIAN.md.
+# Serving all four packages' .debs from a local apt repository is what lets apt
+# satisfy that chain inside a testbed that has never seen the other three. It
+# stands in for the archive the packages will live in once accepted; see the
+# coverage caveats in DEBIAN.md.
 cp "$BIN"/*.deb "$LOCAL_REPO/"
 (
     cd "$LOCAL_REPO"
@@ -85,7 +107,7 @@ describe_rc() {
 }
 
 failed=()
-for name in serialize reliable netcode yojimbo; do
+for name in "${PACKAGES[@]}"; do
     changes=("$BIN/${name}_"*.changes)
     [ "${#changes[@]}" -eq 1 ] && [ -f "${changes[0]}" ] || {
         echo "error: expected exactly one .changes for $name in $BIN," \
@@ -139,4 +161,4 @@ if [ "${#failed[@]}" -gt 0 ]; then
     echo "autopkgtest FAILED for: ${failed[*]}"
     exit 1
 fi
-echo "autopkgtest passed for all four packages."
+echo "autopkgtest passed: ${PACKAGES[*]}"

@@ -71,9 +71,10 @@ submissions follow).
   **debian:sid**, against the **binary packages as installed by apt** —
   so a broken `debian/tests/control`, an unsatisfiable test dependency, a
   header installed to the wrong path or a missing symbol at link time all
-  fail the job. Test dependencies are resolved by apt from a testbed that
+  fail the job. Each package is tested in a **container of its own**, which
   starts without a compiler, so `Depends: @, build-essential` is genuinely
-  checked rather than assumed.
+  checked rather than assumed and no package is tested in a testbed left
+  dirty by the previous one.
 
   What it does not cover, and what a sponsor should know:
 

@@ -62,16 +62,26 @@ jobs:
   # existed nothing ever executed them — the job above builds and lintians, and
   # lintian does not run tests. See scripts/run-autopkgtest.sh for why the null
   # runner, and DEBIAN.md for what this does and does not cover.
+  #
+  # One package per job, so each gets a fresh container. The null runner cannot
+  # undo what a test installs, so sharing one container would mean every
+  # package after the first was tested in a testbed already holding the
+  # previous package's test dependencies.
   autopkgtest:
     needs: source-packages
     runs-on: ubuntu-24.04
     container: debian:sid
+    strategy:
+      fail-fast: false
+      matrix:
+        package: [serialize, reliable, netcode, yojimbo]
     env:
       DEBIAN_FRONTEND: noninteractive
     steps:
       # --no-install-recommends deliberately: the testbed must start without a
       # compiler so that a package whose debian/tests/control forgets to depend
-      # on build-essential fails here instead of passing by accident.
+      # on build-essential fails here instead of passing by accident. Only true
+      # because each package gets its own container — see above.
       - name: install autopkgtest
         run: |
           apt-get update
@@ -86,12 +96,12 @@ jobs:
           path: out-official-binaries/
 
       - name: run autopkgtest
-        run: ./scripts/run-autopkgtest.sh
+        run: ./scripts/run-autopkgtest.sh "${{ matrix.package }}"
 
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: autopkgtest-logs
+          name: autopkgtest-logs-${{ matrix.package }}
           path: |
             out-autopkgtest/
             !out-autopkgtest/local-apt-repo/**
