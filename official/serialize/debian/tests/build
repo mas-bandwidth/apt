@@ -40,11 +40,6 @@ int main()
     writeStream.Flush();
     const int64_t written = writeStream.GetBytesProcessed();
 
-    // DELIBERATE FAULT INJECTION - TEMPORARY, REVERTED IN THE NEXT COMMIT.
-    // Corrupt the wire bytes between write and read so the round-trip
-    // comparison below must fail. Proves the CI autopkgtest job goes red.
-    buffer[0] ^= 0xFF;
-
     Payload out;
     memset( &out, 0, sizeof( out ) );
     serialize::ReadStream readStream( buffer, (int) written );
