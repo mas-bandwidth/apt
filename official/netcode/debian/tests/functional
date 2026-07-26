@@ -1,0 +1,190 @@
+#!/bin/sh
+# autopkgtest: exercise real library behaviour against the INSTALLED libnetcode.
+#
+# The existing "build" test proves the shared library links and initializes. This one
+# proves it computes: address parsing and connect-token generation are pure computation,
+# so they run with no sockets bound and no port to collide with another job on the
+# builder. netcode CI has already been bitten once by a hardcoded port, so a packaging
+# test that binds nothing is a deliberate choice.
+#
+# Verified before committing: run against libnetcode with defects injected (address
+# equality stubbed to always-true, and the CSPRNG frozen to constant bytes) and it failed
+# on both.
+set -e
+cd "$AUTOPKGTEST_TMP"
+cat > use.c <<'SRC'
+#include <netcode.h>
+#include <stdio.h>
+#include <string.h>
+
+// Address parsing and connect-token generation are pure computation: no sockets are
+// opened and no clock is read, so this exercises real protocol behaviour on a builder
+// without any of the flakiness a bound port would bring.
+
+#define ADDRESS_BUFFER_BYTES 256
+
+static int check_address( const char * text, int expected_type, uint16_t expected_port )
+{
+    struct netcode_address_t address;
+    struct netcode_address_t reparsed;
+    char buffer[ADDRESS_BUFFER_BYTES];
+
+    memset( &address, 0, sizeof( address ) );
+    if ( netcode_parse_address( (char*) text, &address ) != NETCODE_OK )
+    {
+        printf( "failed to parse %s\n", text );
+        return 0;
+    }
+    if ( address.type != expected_type )
+    {
+        printf( "%s parsed as type %d, expected %d\n", text, (int) address.type, expected_type );
+        return 0;
+    }
+    if ( address.port != expected_port )
+    {
+        printf( "%s parsed port %d, expected %d\n", text, (int) address.port, (int) expected_port );
+        return 0;
+    }
+
+    // Round-trip through the printed form rather than comparing to the input string, so
+    // this does not depend on netcode's choice of formatting (brackets, zero compression).
+    memset( buffer, 0, sizeof( buffer ) );
+    if ( netcode_address_to_string( &address, buffer ) != buffer )
+    {
+        printf( "to_string did not return its buffer for %s\n", text );
+        return 0;
+    }
+    memset( &reparsed, 0, sizeof( reparsed ) );
+    if ( netcode_parse_address( buffer, &reparsed ) != NETCODE_OK )
+    {
+        printf( "could not re-parse printed address '%s' (from %s)\n", buffer, text );
+        return 0;
+    }
+    if ( !netcode_address_equal( &address, &reparsed ) )
+    {
+        printf( "round trip changed the address: %s -> '%s'\n", text, buffer );
+        return 0;
+    }
+    return 1;
+}
+
+int main()
+{
+    int i;
+
+    if ( netcode_init() != NETCODE_OK ) { printf( "init failed\n" ); return 1; }
+
+    if ( !check_address( "127.0.0.1:40000", NETCODE_ADDRESS_IPV4, 40000 ) ) return 1;
+    if ( !check_address( "10.24.168.3:1",   NETCODE_ADDRESS_IPV4, 1 ) ) return 1;
+    if ( !check_address( "255.255.255.255", NETCODE_ADDRESS_IPV4, 0 ) ) return 1;
+    if ( !check_address( "[::1]:40000",     NETCODE_ADDRESS_IPV6, 40000 ) ) return 1;
+    if ( !check_address( "[fe80::1]:1234",  NETCODE_ADDRESS_IPV6, 1234 ) ) return 1;
+    if ( !check_address( "::1",             NETCODE_ADDRESS_IPV6, 0 ) ) return 1;
+
+    // Two different addresses must not compare equal. Without this, an address_equal that
+    // always returned true would pass every check above.
+    {
+        struct netcode_address_t a, b;
+        memset( &a, 0, sizeof( a ) );
+        memset( &b, 0, sizeof( b ) );
+        netcode_parse_address( (char*) "127.0.0.1:40000", &a );
+        netcode_parse_address( (char*) "127.0.0.1:40001", &b );
+        if ( netcode_address_equal( &a, &b ) )
+        {
+            printf( "addresses differing only in port compared equal\n" );
+            return 1;
+        }
+        netcode_parse_address( (char*) "127.0.0.2:40000", &b );
+        if ( netcode_address_equal( &a, &b ) )
+        {
+            printf( "different ipv4 addresses compared equal\n" );
+            return 1;
+        }
+    }
+
+    // Malformed input must be rejected rather than half-parsed.
+    {
+        // Only cases netcode's own suite already treats as invalid. A packaging test is
+        // the wrong place to assert strictness upstream has not committed to.
+        const char * bad[] = { "", "not an address", "127.0.0.1:65536", "1234.0.12313.0000",
+                               "[", "[]", "[]:", ":", "...." };
+        for ( i = 0; i < (int) ( sizeof( bad ) / sizeof( bad[0] ) ); ++i )
+        {
+            struct netcode_address_t address;
+            memset( &address, 0, sizeof( address ) );
+            if ( netcode_parse_address( (char*) bad[i], &address ) == NETCODE_OK )
+            {
+                printf( "malformed address '%s' was accepted\n", bad[i] );
+                return 1;
+            }
+        }
+    }
+
+    // Connect token generation. Pure computation -- it encrypts the private section with
+    // libsodium and never touches the network -- so it belongs in a no-network test.
+    {
+        uint8_t private_key[NETCODE_KEY_BYTES];
+        uint8_t user_data[NETCODE_USER_DATA_BYTES];
+        uint8_t token_a[NETCODE_CONNECT_TOKEN_BYTES];
+        uint8_t token_b[NETCODE_CONNECT_TOKEN_BYTES];
+        const char * server_addresses[1] = { "127.0.0.1:40000" };
+        int all_zero = 1;
+
+        for ( i = 0; i < NETCODE_KEY_BYTES; ++i ) private_key[i] = (uint8_t) i;
+        for ( i = 0; i < NETCODE_USER_DATA_BYTES; ++i ) user_data[i] = (uint8_t) ( 255 - i );
+
+        memset( token_a, 0, sizeof( token_a ) );
+        memset( token_b, 0, sizeof( token_b ) );
+
+        if ( netcode_generate_connect_token( 1, server_addresses, server_addresses, 30, 5,
+                                             1234ULL, 0x1122334455667788ULL,
+                                             private_key, user_data, token_a ) != NETCODE_OK )
+        {
+            printf( "connect token generation failed\n" );
+            return 1;
+        }
+        for ( i = 0; i < NETCODE_CONNECT_TOKEN_BYTES; ++i )
+        {
+            if ( token_a[i] != 0 ) { all_zero = 0; break; }
+        }
+        if ( all_zero )
+        {
+            printf( "connect token is entirely zero\n" );
+            return 1;
+        }
+
+        // The SAME inputs must not produce the same token. Three things in a token are
+        // freshly random per call: the two session keys and the AEAD nonce. This checks
+        // that the token as a whole is non-deterministic; it does NOT isolate which of the
+        // three, and a broken nonce alone would still pass because the keys move. Stated
+        // precisely because I verified it: freezing the nonce does not fail this check.
+        // What it does catch is a build where the CSPRNG returns constant bytes, which
+        // would mean fixed session keys and nonce reuse together.
+        if ( netcode_generate_connect_token( 1, server_addresses, server_addresses, 30, 5,
+                                             1234ULL, 0x1122334455667788ULL,
+                                             private_key, user_data, token_b ) != NETCODE_OK )
+        {
+            printf( "second connect token generation failed\n" );
+            return 1;
+        }
+        if ( memcmp( token_a, token_b, sizeof( token_a ) ) == 0 )
+        {
+            printf( "two connect tokens with identical inputs are byte-identical -- the CSPRNG is not returning fresh bytes\n" );
+            return 1;
+        }
+
+        // NOT asserting that out-of-range server counts are refused: those bounds are
+        // netcode_assert, which -DNDEBUG compiles out, and the Debian package is a release
+        // build. Asserting it here would test a contract this library does not ship.
+    }
+
+    netcode_term();
+
+    printf( "netcode: addresses parsed and round-tripped, malformed input rejected, "
+            "connect tokens generated and non-repeating\n" );
+    return 0;
+}
+SRC
+gcc -DNDEBUG -o use use.c -lnetcode -lsodium
+./use
+echo OK
