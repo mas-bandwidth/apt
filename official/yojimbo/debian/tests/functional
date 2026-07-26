@@ -1,0 +1,140 @@
+#!/bin/sh
+# autopkgtest: exercise real library behaviour against the INSTALLED libyojimbo.
+#
+# The existing "build" test proves the shared library and its whole dependency chain link
+# and initialize. This one proves the address layer computes: parsing, printing,
+# round-tripping, equality and classification are pure computation, so nothing binds a
+# port and nothing can race another job on the builder.
+#
+# Verified before committing: run against libyojimbo with three defects injected
+# (operator== stubbed to always-true, IsLoopback stubbed to always-false, and SetPort
+# perturbing the address) and it failed on all three.
+set -e
+cd "$AUTOPKGTEST_TMP"
+cat > use.cpp <<'SRC'
+#include <yojimbo.h>
+#include <stdio.h>
+#include <string.h>
+
+// Address handling is pure computation -- no sockets are opened -- so it exercises real
+// library behaviour on a builder with nothing to bind and nothing to race.
+
+using namespace yojimbo;
+
+static bool check_address( const char * text, AddressType expected_type, uint16_t expected_port )
+{
+    char buffer[256];
+    Address address( text );
+
+    if ( !address.IsValid() )
+    {
+        printf( "failed to parse %s\n", text );
+        return false;
+    }
+    if ( address.GetType() != expected_type )
+    {
+        printf( "%s parsed as type %d, expected %d\n", text, (int) address.GetType(), (int) expected_type );
+        return false;
+    }
+    if ( address.GetPort() != expected_port )
+    {
+        printf( "%s parsed port %d, expected %d\n", text, (int) address.GetPort(), (int) expected_port );
+        return false;
+    }
+
+    // Round trip through the printed form rather than comparing against the input, so this
+    // does not depend on yojimbo's formatting choices (brackets, IPv6 zero compression).
+    memset( buffer, 0, sizeof( buffer ) );
+    address.ToString( buffer, sizeof( buffer ) );
+    Address reparsed( buffer );
+    if ( !reparsed.IsValid() )
+    {
+        printf( "could not re-parse printed address '%s' (from %s)\n", buffer, text );
+        return false;
+    }
+    if ( !( address == reparsed ) )
+    {
+        printf( "round trip changed the address: %s -> '%s'\n", text, buffer );
+        return false;
+    }
+    return true;
+}
+
+int main()
+{
+    if ( !InitializeYojimbo() ) { printf( "InitializeYojimbo failed\n" ); return 1; }
+
+    if ( !check_address( "127.0.0.1:40000", ADDRESS_IPV4, 40000 ) ) return 1;
+    if ( !check_address( "10.24.168.3:1",   ADDRESS_IPV4, 1 ) ) return 1;
+    if ( !check_address( "255.255.255.255", ADDRESS_IPV4, 0 ) ) return 1;
+    if ( !check_address( "[::1]:40000",     ADDRESS_IPV6, 40000 ) ) return 1;
+    if ( !check_address( "[fe80::1]:1234",  ADDRESS_IPV6, 1234 ) ) return 1;
+    if ( !check_address( "2001:4860:4860::8888", ADDRESS_IPV6, 0 ) ) return 1;
+
+    // Equality has to actually discriminate, or every check above would pass against an
+    // operator== that returned true unconditionally.
+    {
+        Address a( "127.0.0.1:40000" );
+        Address b( "127.0.0.1:40001" );
+        Address c( "127.0.0.2:40000" );
+        Address d( "127.0.0.1", 40000 );
+        if ( a == b ) { printf( "addresses differing only in port compared equal\n" ); return 1; }
+        if ( a == c ) { printf( "different ipv4 addresses compared equal\n" ); return 1; }
+        if ( !( a != b ) ) { printf( "operator!= disagrees with operator==\n" ); return 1; }
+        if ( !( a == d ) ) { printf( "string-with-port and string+port ctors disagree\n" ); return 1; }
+    }
+
+    // SetPort must not disturb the address itself.
+    {
+        Address a( "[fe80::1]:1234" );
+        Address b( "[fe80::1]:5678" );
+        a.SetPort( 5678 );
+        if ( !( a == b ) ) { printf( "SetPort changed more than the port\n" ); return 1; }
+    }
+
+    // Malformed input must produce an invalid address, not a half-parsed one.
+    {
+        const char * bad[] = { "", "not an address", "1.2.3", "999.1.1.1", "[]", ":" };
+        for ( int i = 0; i < (int) ( sizeof( bad ) / sizeof( bad[0] ) ); ++i )
+        {
+            Address address( bad[i] );
+            if ( address.IsValid() )
+            {
+                printf( "malformed address '%s' was accepted\n", bad[i] );
+                return 1;
+            }
+        }
+    }
+
+    // Address classification. Only the cases that are correct in the shipped library are
+    // asserted here.
+    //
+    // Deliberately NOT covered: ff02::1 and other real multicast addresses, and fe80::/10
+    // addresses above fe80 such as febf::1. IsMulticast/IsLinkLocal/IsSiteLocal compare the
+    // first 16-bit group for exact equality rather than masking the prefix, so those are
+    // misclassified -- and IsGlobalUnicast then reports true for them. Reported upstream.
+    // A packaging test is the wrong place to assert a fix that has not shipped: it would
+    // make the Debian package look broken when the package is faithful to its source.
+    {
+        Address loopback4( "127.0.0.1" );
+        Address loopback6( "::1" );
+        Address linklocal( "fe80::1" );
+        Address global( "2001:4860:4860::8888" );
+
+        if ( !loopback4.IsLoopback() ) { printf( "127.0.0.1 not reported as loopback\n" ); return 1; }
+        if ( !loopback6.IsLoopback() ) { printf( "::1 not reported as loopback\n" ); return 1; }
+        if ( !linklocal.IsLinkLocal() ) { printf( "fe80::1 not reported as link local\n" ); return 1; }
+        if ( linklocal.IsGlobalUnicast() ) { printf( "fe80::1 reported as global unicast\n" ); return 1; }
+        if ( !global.IsGlobalUnicast() ) { printf( "2001:4860:4860::8888 not global unicast\n" ); return 1; }
+        if ( global.IsLoopback() ) { printf( "a global address reported as loopback\n" ); return 1; }
+    }
+
+    ShutdownYojimbo();
+
+    printf( "yojimbo: addresses parsed, round-tripped and compared, malformed input rejected\n" );
+    return 0;
+}
+SRC
+g++ -DNDEBUG -o use use.cpp -lyojimbo -lnetcode -lreliable -lsodium -lpthread -lm
+./use
+echo OK

@@ -1,2 +1,2 @@
-Tests: build
+Tests: build, functional
 Depends: @, build-essential

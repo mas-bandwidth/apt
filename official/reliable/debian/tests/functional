@@ -1,0 +1,211 @@
+#!/bin/sh
+# autopkgtest: exercise real library behaviour against the INSTALLED libreliable.
+#
+# The existing "build" test proves the shared library links and initializes. This one
+# proves it works: two endpoints are wired to each other in-process, so a full send /
+# receive / ack round trip and a fragment-reassembly cycle run with no sockets, no
+# threads and no wall clock -- time is a value we pass in. Nothing here can flake on a
+# busy builder, which is why it is safe to run in an archive-wide rebuild.
+#
+# Verified before committing: this test was run against libreliable with three separate
+# defects injected (a corrupted payload byte in flight, all packets dropped, and only
+# fragments dropped) and it failed on all three.
+set -e
+cd "$AUTOPKGTEST_TMP"
+cat > use.c <<'SRC'
+#include <reliable.h>
+#include <stdio.h>
+#include <string.h>
+
+// Two endpoints wired to each other in-process: one endpoint's transmit callback
+// hands the bytes straight to the other's receive. No sockets, no threads, and time
+// is a value we pass in, so this is pure computation and cannot flake on a builder.
+
+#define SMALL_BYTES 64
+#define LARGE_BYTES 4000                // > fragment_above (1024): forces fragment + reassemble
+#define ITERATIONS  32
+
+struct context_t
+{
+    struct reliable_endpoint_t * endpoint[2];
+    int received_small[2];
+    int received_large[2];
+    int corrupt[2];
+};
+
+static void fill( uint8_t * p, int bytes, uint16_t sequence )
+{
+    int i;
+    for ( i = 0; i < bytes; ++i )
+        p[i] = (uint8_t) ( ( i * 3 + sequence ) & 0xFF );
+}
+
+static void transmit( void * ctx, uint64_t id, uint16_t sequence, uint8_t * data, int bytes )
+{
+    struct context_t * c = (struct context_t*) ctx;
+    (void) sequence;
+    reliable_endpoint_receive_packet( c->endpoint[ id == 0 ? 1 : 0 ], data, bytes );
+}
+
+static int process( void * ctx, uint64_t id, uint16_t sequence, uint8_t * data, int bytes )
+{
+    struct context_t * c = (struct context_t*) ctx;
+    uint8_t expected[LARGE_BYTES];
+    int self = ( id == 0 ) ? 0 : 1;
+
+    if ( bytes != SMALL_BYTES && bytes != LARGE_BYTES )
+    {
+        printf( "unexpected packet size %d\n", bytes );
+        c->corrupt[self]++;
+        return 0;
+    }
+
+    // The payload is keyed to the sequence the header carried, so this checks that the
+    // header and the body actually correspond -- not merely that some bytes arrived.
+    fill( expected, bytes, sequence );
+    if ( memcmp( expected, data, (size_t) bytes ) != 0 )
+    {
+        printf( "payload mismatch at sequence %d (%d bytes)\n", (int) sequence, bytes );
+        c->corrupt[self]++;
+        return 0;
+    }
+
+    if ( bytes == SMALL_BYTES )
+        c->received_small[self]++;
+    else
+        c->received_large[self]++;
+
+    return 1;
+}
+
+int main()
+{
+    int i;
+
+    if ( reliable_init() != RELIABLE_OK ) { printf( "init failed\n" ); return 1; }
+
+    struct context_t context;
+    memset( &context, 0, sizeof( context ) );
+
+    struct reliable_config_t config[2];
+    for ( i = 0; i < 2; ++i )
+    {
+        reliable_default_config( &config[i] );
+        config[i].context = &context;
+        config[i].id = (uint64_t) i;
+        config[i].transmit_packet_function = &transmit;
+        config[i].process_packet_function = &process;
+    }
+
+    double time = 100.0;
+    context.endpoint[0] = reliable_endpoint_create( &config[0], time );
+    context.endpoint[1] = reliable_endpoint_create( &config[1], time );
+    if ( !context.endpoint[0] || !context.endpoint[1] ) { printf( "create failed\n" ); return 1; }
+
+    // Both directions send every iteration; acks ride along in the next packet's header,
+    // which is why a one-shot send would prove nothing about acking.
+    for ( i = 0; i < ITERATIONS; ++i )
+    {
+        int e;
+        for ( e = 0; e < 2; ++e )
+        {
+            uint8_t packet[SMALL_BYTES];
+            fill( packet, sizeof( packet ), reliable_endpoint_next_packet_sequence( context.endpoint[e] ) );
+            reliable_endpoint_send_packet( context.endpoint[e], packet, sizeof( packet ) );
+        }
+        reliable_endpoint_update( context.endpoint[0], time );
+        reliable_endpoint_update( context.endpoint[1], time );
+        time += 0.01;
+    }
+
+    for ( i = 0; i < 2; ++i )
+    {
+        if ( context.corrupt[i] != 0 )
+        {
+            printf( "endpoint %d saw %d corrupt packets\n", i, context.corrupt[i] );
+            return 1;
+        }
+        if ( context.received_small[i] != ITERATIONS )
+        {
+            printf( "endpoint %d received %d of %d packets\n", i, context.received_small[i], ITERATIONS );
+            return 1;
+        }
+    }
+
+    // Acks. A packet is acked by the header of a LATER packet from the peer, so the final
+    // packet in each direction is legitimately unacked -- require the first half, which is
+    // what reliable's own test suite requires.
+    for ( i = 0; i < 2; ++i )
+    {
+        uint8_t acked[ITERATIONS];
+        memset( acked, 0, sizeof( acked ) );
+        int num_acks = 0;
+        uint16_t * acks = reliable_endpoint_get_acks( context.endpoint[i], &num_acks );
+        int a;
+        for ( a = 0; a < num_acks; ++a )
+        {
+            if ( acks[a] < ITERATIONS )
+                acked[acks[a]] = 1;
+        }
+        int s;
+        for ( s = 0; s < ITERATIONS / 2; ++s )
+        {
+            if ( !acked[s] )
+            {
+                printf( "endpoint %d never got an ack for sequence %d (%d acks total)\n", i, s, num_acks );
+                return 1;
+            }
+        }
+    }
+
+    // Fragmentation and reassembly: 4000 bytes over a 1024-byte fragment size is four
+    // fragments that have to be split, carried and put back together in the right order.
+    // Deliberately NOT asserting these are acked -- fragmented packets are not ackable.
+    {
+        uint8_t large[LARGE_BYTES];
+        uint16_t sequence = reliable_endpoint_next_packet_sequence( context.endpoint[0] );
+        fill( large, sizeof( large ), sequence );
+        reliable_endpoint_send_packet( context.endpoint[0], large, sizeof( large ) );
+        reliable_endpoint_update( context.endpoint[0], time );
+        reliable_endpoint_update( context.endpoint[1], time );
+
+        if ( context.received_large[1] != 1 )
+        {
+            printf( "fragmented packet did not reassemble (received_large=%d)\n", context.received_large[1] );
+            return 1;
+        }
+        if ( context.corrupt[1] != 0 )
+        {
+            printf( "fragmented packet reassembled corrupt\n" );
+            return 1;
+        }
+    }
+
+    // A packet larger than max_packet_size must be refused, not truncated or crashed.
+    // reliable logs an error and drops it; what matters is that nothing is delivered.
+    {
+        static uint8_t oversized[16 * 1024 + 1];
+        int before = context.received_large[1] + context.received_small[1];
+        memset( oversized, 0xAB, sizeof( oversized ) );
+        reliable_endpoint_send_packet( context.endpoint[0], oversized, (int) sizeof( oversized ) );
+        reliable_endpoint_update( context.endpoint[0], time );
+        reliable_endpoint_update( context.endpoint[1], time );
+        if ( context.received_large[1] + context.received_small[1] != before )
+        {
+            printf( "oversized packet was delivered instead of dropped\n" );
+            return 1;
+        }
+    }
+
+    reliable_endpoint_destroy( context.endpoint[0] );
+    reliable_endpoint_destroy( context.endpoint[1] );
+    reliable_term();
+
+    printf( "reliable: %d small round-tripped each way, acked, %d-byte packet fragmented and reassembled\n",
+            ITERATIONS, LARGE_BYTES );
+    return 0;
+}
+SRC
+gcc -DNDEBUG -o use use.c -lreliable -lm
+./use
+echo OK
