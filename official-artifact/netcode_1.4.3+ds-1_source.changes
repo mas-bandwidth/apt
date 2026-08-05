@@ -1,0 +1,29 @@
+Format: 1.8
+Date: Sun, 26 Jul 2026 21:42:19 +0000
+Source: netcode
+Architecture: source
+Version: 1.4.3+ds-1
+Distribution: unstable
+Urgency: medium
+Maintainer: Glenn Fiedler <glenn@mas-bandwidth.com>
+Changed-By: Glenn Fiedler <glenn@mas-bandwidth.com>
+Closes: 1141998
+Changes:
+ netcode (1.4.3+ds-1) unstable; urgency=medium
+ .
+   * Initial release. (Closes: #1141998)
+Checksums-Sha1:
+ 6d10e3d84f0f5d5453c2ad34ebae6e7450f65544 1070 netcode_1.4.3+ds-1.dsc
+ 0957640ed58cf65fd2a7eb27bf0e2af83380a5e9 78024 netcode_1.4.3+ds.orig.tar.xz
+ c9e4553efc77f0dc3ccc08985cb868e57d703beb 4928 netcode_1.4.3+ds-1.debian.tar.xz
+ aff54c7184b8d1c3c592473aeccfc3e68f3cb319 5289 netcode_1.4.3+ds-1_source.buildinfo
+Checksums-Sha256:
+ f9ffbda5dee60df0b3a780dbdeb64cf8b6e2f81b4dc09f429c86535db66bac47 1070 netcode_1.4.3+ds-1.dsc
+ ffbda9a9bf1c1bdbd6f49c3dd17cb3ceb05e2244f5eb4d8c7895c6ea3cb7873a 78024 netcode_1.4.3+ds.orig.tar.xz
+ b090c6c6d4dd5e6c071d95e37feced4c18a66f1724b6af006f96d5ecba5ea50e 4928 netcode_1.4.3+ds-1.debian.tar.xz
+ 216e80765fb445f22d7ee34e8458bc5dd6b41f593801af80e72edd7c6d2612e9 5289 netcode_1.4.3+ds-1_source.buildinfo
+Files:
+ ab7194e2e807a3ce90315dd36c9aadce 1070 libdevel optional netcode_1.4.3+ds-1.dsc
+ 7693d79bc598ccc464fcdd55672af6a1 78024 libdevel optional netcode_1.4.3+ds.orig.tar.xz
+ 5bde03ca2096820daf6fd3eab79a2860 4928 libdevel optional netcode_1.4.3+ds-1.debian.tar.xz
+ feebab66b376e5eed580e26364e3d19f 5289 libdevel optional netcode_1.4.3+ds-1_source.buildinfo
