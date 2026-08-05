@@ -49,11 +49,18 @@ submissions follow).
   documented in `debian/copyright`; be ready to justify this to ftpmaster.
 - **autopkgtests** (`debian/tests/`): each package compiles, links and runs a
   program against the installed package — Debian's CI runs these continuously
-  once the packages are in. serialize's test round-trips a struct through
-  `WriteStream`/`ReadStream` and asserts that an integer encoded outside its
-  declared range is rejected on read. reliable's, netcode's and yojimbo's
-  still only initialize and shut down the library; deepening those is
-  outstanding work.
+  once the packages are in. Every package has a real functional test beyond
+  the build/link check, each verified by injecting defects and watching it
+  fail: serialize round-trips a struct through `WriteStream`/`ReadStream` and
+  asserts an out-of-range integer is rejected on read; reliable wires two
+  endpoints to each other in-process and runs a full send/receive/ack round
+  trip plus fragment reassembly; netcode exercises address parsing and
+  connect-token generation; yojimbo exercises the address layer (parse,
+  print, round-trip, equality, classification). All are pure computation —
+  no sockets bound, no wall-clock dependence — so none can flake on a busy
+  builder. *(This paragraph previously said the reliable/netcode/yojimbo
+  tests "only initialize and shut down the library" — true when written,
+  stale since the functional tests landed.)*
 - **DEP-12 upstream metadata** (`debian/upstream/metadata`).
 - **CI validation**: the [`official`](.github/workflows/official.yml)
   workflow builds everything on `debian:sid` — full binary build (running the
