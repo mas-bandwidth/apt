@@ -1,0 +1,29 @@
+Format: 1.8
+Date: Sun, 26 Jul 2026 21:41:56 +0000
+Source: serialize
+Architecture: source
+Version: 1.5.0-1
+Distribution: unstable
+Urgency: medium
+Maintainer: Glenn Fiedler <glenn@mas-bandwidth.com>
+Changed-By: Glenn Fiedler <glenn@mas-bandwidth.com>
+Closes: 1141996
+Changes:
+ serialize (1.5.0-1) unstable; urgency=medium
+ .
+   * Initial release. (Closes: #1141996)
+Checksums-Sha1:
+ af82b40bfff5c4c954c61272bc3298c1c7922651 1058 serialize_1.5.0-1.dsc
+ ea53d18af0610278c80dcb3cf00626f05d617ecc 46436 serialize_1.5.0.orig.tar.xz
+ 26b695ed91ef914363c6c11a8fda646b04c40b53 3064 serialize_1.5.0-1.debian.tar.xz
+ 300985daa3637637989816d3d9a77f650bf1bc9c 5229 serialize_1.5.0-1_source.buildinfo
+Checksums-Sha256:
+ 0d4d7368dbc55c69405b1e533f7a73bcda4d42e9ea8eb7ebcff0e9d270f35985 1058 serialize_1.5.0-1.dsc
+ b4464986259e3b0a842b8dbc54c394599b6fb3515c5605bc0e4a43c6cb5bdaf5 46436 serialize_1.5.0.orig.tar.xz
+ 7ba412ab43ae48f85abfa81f60ed8c05021cdb303a162bb27979b1e58058b17a 3064 serialize_1.5.0-1.debian.tar.xz
+ cbea6e40665407b52adb6c6033753e8478874807f9f864431f59bf04f9c4764a 5229 serialize_1.5.0-1_source.buildinfo
+Files:
+ 860f951bf69118c35a4a22e2c9326fd8 1058 libdevel optional serialize_1.5.0-1.dsc
+ 2352c7e4aeacd05143e341cf7331b797 46436 libdevel optional serialize_1.5.0.orig.tar.xz
+ 8ae7b5ee16874201051e07cb1c33e191 3064 libdevel optional serialize_1.5.0-1.debian.tar.xz
+ ddfb7da4a82d66e91ce3e59db467cdba 5229 libdevel optional serialize_1.5.0-1_source.buildinfo

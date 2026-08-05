@@ -1,0 +1,29 @@
+Format: 1.8
+Date: Sun, 26 Jul 2026 21:42:05 +0000
+Source: reliable
+Architecture: source
+Version: 1.4.0-1
+Distribution: unstable
+Urgency: medium
+Maintainer: Glenn Fiedler <glenn@mas-bandwidth.com>
+Changed-By: Glenn Fiedler <glenn@mas-bandwidth.com>
+Closes: 1141997
+Changes:
+ reliable (1.4.0-1) unstable; urgency=medium
+ .
+   * Initial release. (Closes: #1141997)
+Checksums-Sha1:
+ b220438c3ccf50c408eae615cb9c400213e7397d 1046 reliable_1.4.0-1.dsc
+ abe3f48a8ed5a51a0d8476f80c65272294939950 38580 reliable_1.4.0.orig.tar.xz
+ 0f26b8a5d76f62118e1bf159a5e6e84153629c8c 4560 reliable_1.4.0-1.debian.tar.xz
+ 782291aa131e04ea97d710cc112952d16a714141 5225 reliable_1.4.0-1_source.buildinfo
+Checksums-Sha256:
+ 990d7af50e32ee22bb5b376c069a47f8c41506182f9cdb1399aa261a61a95c7c 1046 reliable_1.4.0-1.dsc
+ 09142ef070edd20d66a4456bd9c4637f5ecdc5bfd63f4e840d22656c28255c9c 38580 reliable_1.4.0.orig.tar.xz
+ f8382447514796a9fa58797678b45b3bf96e9ea2153e937aeba2bee2b2cd602c 4560 reliable_1.4.0-1.debian.tar.xz
+ c0d90ef6fa46d14fd042b2b6d00fab84186e436b1ceac7ea8688a0f69dcc65e5 5225 reliable_1.4.0-1_source.buildinfo
+Files:
+ 29ae8d5ccca85ed5106769f4047a2a5a 1046 libdevel optional reliable_1.4.0-1.dsc
+ 239d60f4dd5279e921d49266ec066a31 38580 libdevel optional reliable_1.4.0.orig.tar.xz
+ f4b0fd2caef539464f40aade17f32a7a 4560 libdevel optional reliable_1.4.0-1.debian.tar.xz
+ 302401c10fe2392a2d470f0b3833d3cb 5225 libdevel optional reliable_1.4.0-1_source.buildinfo

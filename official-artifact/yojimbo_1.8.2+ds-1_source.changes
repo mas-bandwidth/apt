@@ -1,0 +1,29 @@
+Format: 1.8
+Date: Sun, 26 Jul 2026 21:42:31 +0000
+Source: yojimbo
+Architecture: source
+Version: 1.8.2+ds-1
+Distribution: unstable
+Urgency: medium
+Maintainer: Glenn Fiedler <glenn@mas-bandwidth.com>
+Changed-By: Glenn Fiedler <glenn@mas-bandwidth.com>
+Closes: 1141999
+Changes:
+ yojimbo (1.8.2+ds-1) unstable; urgency=medium
+ .
+   * Initial release. (Closes: #1141999)
+Checksums-Sha1:
+ 92e97664dcccacf2d2c99b22e970b3bb5a5fca1a 1206 yojimbo_1.8.2+ds-1.dsc
+ 1bd2f0be85210ba6dd67b40881567bad9f5ae6ca 160152 yojimbo_1.8.2+ds.orig.tar.xz
+ bc742cc6fc8e5fb605d67dd2a0a21d8fea4a532d 4936 yojimbo_1.8.2+ds-1.debian.tar.xz
+ 9de6e02966711a8e3a2fad7255b67a373daf59be 5382 yojimbo_1.8.2+ds-1_source.buildinfo
+Checksums-Sha256:
+ 75deca4feb40438f2ca50963bc13a842e5a379bd0dc9c5976c2b72d9f72bd45e 1206 yojimbo_1.8.2+ds-1.dsc
+ c7b9c3df8af0cc9508e3d69335cef45e894e24e8c4ed125f9487c1fed6ef1a2b 160152 yojimbo_1.8.2+ds.orig.tar.xz
+ a72184562cfbe1d8a70e3147d835c4ec3f8f75304a91fc47d19239bc4084e33b 4936 yojimbo_1.8.2+ds-1.debian.tar.xz
+ 5ff9618a1b9644613b688898f2ec46a4286f3782375bca9551c71dec4c93739b 5382 yojimbo_1.8.2+ds-1_source.buildinfo
+Files:
+ a5938102696b489053604a6f16331a50 1206 libdevel optional yojimbo_1.8.2+ds-1.dsc
+ a37fc21f124b03c8969636bf595e465e 160152 libdevel optional yojimbo_1.8.2+ds.orig.tar.xz
+ 6f896731ccf901dd8e4aeb9619043745 4936 libdevel optional yojimbo_1.8.2+ds-1.debian.tar.xz
+ 406a36a296efa023fd0da92784eefd70 5382 libdevel optional yojimbo_1.8.2+ds-1_source.buildinfo

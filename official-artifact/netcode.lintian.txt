@@ -1,0 +1,3 @@
+W: netcode source: debian-watch-not-mangling-version version=5\nopts=repacksuffix=+ds,dversionmangle=auto,filenamemangle=s/.*\/v?(\d\S*)\.tar\.gz/netcode-$1.tar.gz/ \\nhttps://github.com/mas-bandwidth/netcode/tags .*/v?(\d\S*)\.tar\.gz [debian/watch:3]
+X: netcode source: debian-watch-does-not-check-openpgp-signature [debian/watch]
+X: netcode source: very-long-line-length-in-source-file 814 > 512 [STANDARD.md:332]
