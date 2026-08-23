@@ -15,6 +15,7 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  actions: write
 
 jobs:
   check:
@@ -45,7 +46,15 @@ jobs:
           git add versions.env
           git commit -m "Bump package versions to latest upstream releases"
           git push -u origin "$BRANCH" --force
-          gh pr create --base main --head "$BRANCH" \
+          if gh pr create --base main --head "$BRANCH" \
             --title "Bump package versions to latest upstream releases" \
-            --body "Automated bump from check-releases.yml. Merging rebuilds and republishes the apt repository." \
-            || { echo "could not create PR (already open, or Actions lacks PR permission)"; git diff HEAD~1; }
+            --body "Automated bump from check-releases.yml. Merging rebuilds and republishes the apt repository."; then
+            # A PR opened with the workflow's own GITHUB_TOKEN never fires
+            # pull_request workflows; workflow_dispatch is one of the two
+            # documented exceptions, so fire the build on the bump branch
+            # explicitly (needs the actions: write permission above).
+            gh workflow run build.yml --ref "$BRANCH"
+          else
+            echo "could not create PR (already open, or Actions lacks PR permission)"
+            git diff HEAD~1
+          fi
