@@ -24,4 +24,9 @@ sleep 2
 kill "$SERVER_PID"   # fails (and fails the script) if the server died
 echo "smoke test: server ran"
 
+# The installed schema compiler: same script as the package's autopkgtest —
+# version, then check + generate on the README example schema.
+AUTOPKGTEST_TMP="$(mktemp -d)" sh "$REPO_ROOT/packages/schema/debian/tests/cli"
+echo "smoke test: schema compiled the example schema"
+
 echo "SMOKE TEST PASS"

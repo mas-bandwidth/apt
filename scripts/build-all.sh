@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
-# Build all four packages in dependency order — serialize, reliable, netcode,
-# yojimbo — installing each into the system as it is built (the later
-# packages build against the earlier ones), and collect the .debs to publish
-# into out/.
+# Build all packages — the C libraries in dependency order (serialize,
+# reliable, netcode, yojimbo; the later ones build against the earlier),
+# then the schema compiler, which stands alone — installing each into the
+# system as it is built, and collect the .debs to publish into out/.
+#
+# schema needs the pinned Go toolchain on the PATH: scripts/install-go.sh.
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -11,7 +13,7 @@ ARCH="$(dpkg --print-architecture)"
 rm -rf "$REPO_ROOT/out"
 mkdir -p "$REPO_ROOT/out"
 
-for name in serialize reliable netcode yojimbo; do
+for name in serialize reliable netcode yojimbo schema; do
     "$REPO_ROOT/scripts/build-package.sh" "$name"
 
     # Install what was just built; later packages in the chain need it.
