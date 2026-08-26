@@ -1,0 +1,24 @@
+Source: schema
+Section: devel
+Priority: optional
+Maintainer: Glenn Fiedler <glenn@mas-bandwidth.com>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.7.0
+Homepage: https://github.com/mas-bandwidth/schema
+Vcs-Git: https://github.com/mas-bandwidth/schema.git
+Vcs-Browser: https://github.com/mas-bandwidth/schema
+Rules-Requires-Root: no
+
+Package: schema
+Architecture: any
+Depends: ${misc:Depends}
+Description: schema compiler for game network data
+ schema compiles declarative data-type definitions into serialization
+ code for C, C++, C#, Go, Rust and JavaScript. One declaration produces
+ the reader and the writer in every target language, bit-identical on
+ the wire, so they cannot drift. Values are bit-packed from declared
+ ranges, and reads validate: out-of-range data is refused, not clamped.
+ .
+ This package contains the schema command-line compiler, a single
+ statically linked binary. The code it generates is not covered by the
+ compiler's license — see /usr/share/doc/schema/copyright.

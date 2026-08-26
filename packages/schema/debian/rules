@@ -1,0 +1,39 @@
+#!/usr/bin/make -f
+# schema is a Go program. The Go toolchain is pinned in versions.env and
+# installed by scripts/install-go.sh (not Build-Depends: golang-go — the
+# distro toolchains span years, and go.mod requires a specific minimum).
+include /usr/share/dpkg/pkg-info.mk
+
+# Hermetic build: the module has no dependencies, so nothing may be fetched,
+# and the pinned toolchain must be the one that builds (no auto-download).
+export GOPROXY = off
+export GOTOOLCHAIN = local
+export GOFLAGS = -trimpath
+export GOCACHE = $(CURDIR)/debian/.gocache
+export CGO_ENABLED = 0
+
+# -X stamps the version the binary reports (the Makefile stamps from git
+# describe; a release tarball has no .git, so stamp the packaged version).
+# -s -w: no debug info in a stripped-for-distribution static binary.
+LDFLAGS = -s -w -X github.com/mas-bandwidth/schema/v2/internal/version.version=v$(DEB_VERSION_UPSTREAM)
+
+%:
+	dh $@
+
+override_dh_auto_build:
+	go build -ldflags "$(LDFLAGS)" -o schema ./cmd/schema
+
+# The full upstream suite needs the six serialize runtimes checked out beside
+# the tree; the packaging test is that the built compiler runs and accepts
+# its own example corpus. debian/tests/cli covers the installed binary.
+override_dh_auto_test:
+	./schema version
+	./schema check examples
+
+override_dh_auto_install:
+	install -D -m 0755 schema debian/schema/usr/bin/schema
+
+# Static Go binary, already built without debug info (-s -w): there is
+# nothing for dwz or strip to process.
+override_dh_dwz:
+override_dh_strip:

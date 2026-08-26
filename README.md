@@ -4,10 +4,11 @@ If these packages help you, please support them: **[Become a supporter](https://
 
 Debian and Ubuntu packages for [yojimbo](https://github.com/mas-bandwidth/yojimbo),
 [netcode](https://github.com/mas-bandwidth/netcode),
-[reliable](https://github.com/mas-bandwidth/reliable) and
-[serialize](https://github.com/mas-bandwidth/serialize).
+[reliable](https://github.com/mas-bandwidth/reliable),
+[serialize](https://github.com/mas-bandwidth/serialize) and the
+[schema](https://github.com/mas-bandwidth/schema) compiler.
 
-This repository holds the `debian/` packaging for all four libraries and the CI
+This repository holds the `debian/` packaging for all of them and the CI
 pipeline that builds them and publishes a signed apt repository to GitHub Pages.
 (For getting the packages into the official Debian archive, see [DEBIAN.md](DEBIAN.md).)
 
@@ -28,6 +29,7 @@ Then:
 
 ```sh
 sudo apt install yojimbo
+sudo apt install schema
 ```
 
 `yojimbo` is a metapackage that pulls in `libyojimbo-dev` and the full dependency
@@ -40,6 +42,7 @@ chain. The individual packages:
 | `libreliable-dev` | acks and packet fragmentation (static lib + header + .pc file) |
 | `libserialize-dev`| header-only bitpacking serializer                              |
 | `yojimbo`         | metapackage: installs `libyojimbo-dev`                         |
+| `schema`          | schema compiler: one declaration, generated serializers in six languages (AGPL-3.0; generated code is yours) |
 
 Supported: Debian 12 (bookworm), Debian 13 (trixie), Ubuntu 22.04 (jammy),
 Ubuntu 24.04 (noble), Ubuntu 26.04 — amd64 and arm64.
@@ -57,20 +60,26 @@ self-contained and needs no dependencies.
 
 ## How it works
 
-- [`versions.env`](versions.env) pins the upstream release of each library.
-- [`packages/*/debian/`](packages/) holds the packaging for each library.
-  Packages are built from the upstream GitHub release tarballs against the
-  distro libsodium (`NETCODE_SYSTEM_SODIUM=ON`) and against each other
+- [`versions.env`](versions.env) pins the upstream release of each package,
+  and the Go toolchain that builds `schema`.
+- [`packages/*/debian/`](packages/) holds the packaging for each package.
+  The libraries are built from the upstream GitHub release tarballs against
+  the distro libsodium (`NETCODE_SYSTEM_SODIUM=ON`) and against each other
   (`YOJIMBO_SYSTEM_DEPS=ON`); nothing vendored is compiled in except tlsf,
   which is a private implementation detail of yojimbo's per-client allocators.
+  `schema` is a statically linked Go binary built by the pinned toolchain
+  ([`scripts/install-go.sh`](scripts/install-go.sh)) with the module proxy
+  off — the module has no dependencies.
 - [`build.yml`](.github/workflows/build.yml) builds every distro × arch in
   containers, runs each package's test suite during the build (yojimbo's full
   functional test suite must print `ALL TESTS PASS`), smoke-tests the installed
-  packages by compiling and running the yojimbo samples against them, then
-  assembles, signs and deploys the repository to GitHub Pages. PR builds
-  validate but do not publish.
+  packages by compiling and running the yojimbo samples against them and
+  compiling the README example schema with the installed `schema`, runs
+  schema's autopkgtest against the built .deb, then assembles, signs and
+  deploys the repository to GitHub Pages. PR builds validate but do not
+  publish.
 - [`check-releases.yml`](.github/workflows/check-releases.yml) runs daily and
-  opens a bump PR when any of the four upstreams publishes a new release.
+  opens a bump PR when any of the upstreams publishes a new release.
 
 ## Maintainer: one-time setup
 

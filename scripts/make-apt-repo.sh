@@ -30,7 +30,7 @@ Label: mas-bandwidth
 Codename: $dist
 Architectures: amd64 arm64
 Components: main
-Description: yojimbo, netcode, reliable and serialize packages
+Description: yojimbo, netcode, reliable, serialize and schema packages
 SignWith: $KEYID
 
 EOF
@@ -56,8 +56,9 @@ cat > "$SITE/index.html" <<EOF
 <p>Debian and Ubuntu packages for
 <a href="https://github.com/mas-bandwidth/yojimbo">yojimbo</a>,
 <a href="https://github.com/mas-bandwidth/netcode">netcode</a>,
-<a href="https://github.com/mas-bandwidth/reliable">reliable</a> and
-<a href="https://github.com/mas-bandwidth/serialize">serialize</a>.</p>
+<a href="https://github.com/mas-bandwidth/reliable">reliable</a>,
+<a href="https://github.com/mas-bandwidth/serialize">serialize</a> and
+<a href="https://github.com/mas-bandwidth/schema">schema</a>.</p>
 <pre>
 sudo install -d /etc/apt/keyrings
 sudo curl -fsSL $BASE_URL/mas-bandwidth-apt.asc -o /etc/apt/keyrings/mas-bandwidth-apt.asc

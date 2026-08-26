@@ -1,0 +1,40 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: schema
+Upstream-Contact: Glenn Fiedler <glenn@mas-bandwidth.com>
+Source: https://github.com/mas-bandwidth/schema
+
+Files: *
+Copyright: 2026 Mas Bandwidth LLC
+License: AGPL-3.0-or-later with generated-output exception
+
+Files: debian/*
+Copyright: 2026 Glenn Fiedler <glenn@mas-bandwidth.com>
+License: AGPL-3.0-or-later with generated-output exception
+
+License: AGPL-3.0-or-later with generated-output exception
+ This program is free software: you can redistribute it and/or modify it
+ under the terms of the GNU Affero General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or (at
+ your option) any later version.
+ .
+ ADDITIONAL PERMISSION — GENERATED OUTPUT
+ .
+ As a special exception, the copyright holders give you permission to
+ use, modify, and distribute the OUTPUT of this program — the code it
+ generates from schema files you provide — under terms of your choice,
+ without those terms being affected in any way by the licence of this
+ program.
+ .
+ The output of this program is not a derivative work of this program.
+ Running this compiler over schema files you own does not place the
+ generated serializers, table codecs, or reflection descriptors under
+ the GNU Affero General Public License, and you may include them in
+ proprietary and closed-source software.
+ .
+ This permission applies to the generated output only. It does not apply
+ to this program itself: modifying the compiler, or conveying it
+ (including making a modified version available to users over a network,
+ per AGPL section 13), remains subject to the licence.
+ .
+ On Debian systems, the complete text of the GNU Affero General Public
+ License version 3 can be found in /usr/share/common-licenses/AGPL-3.

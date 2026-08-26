@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Compare the pinned versions in versions.env against the latest GitHub
-# releases of the four upstream repositories.
+# releases of the upstream repositories.
 #
 #   usage: check-releases.sh [--update]
 #
@@ -17,7 +17,7 @@ UPDATE=0
 source "$REPO_ROOT/versions.env"
 
 stale=0
-for name in serialize reliable netcode yojimbo; do
+for name in serialize reliable netcode yojimbo schema; do
     var="$(echo "$name" | tr '[:lower:]' '[:upper:]')_VERSION"
     pinned="${!var}"
     latest="$(gh api "repos/mas-bandwidth/$name/releases/latest" --jq .tag_name)"

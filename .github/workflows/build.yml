@@ -46,6 +46,11 @@ jobs:
 
       - uses: actions/checkout@v4
 
+      # schema is a Go program; the distro toolchains span years, so the
+      # build uses the toolchain pinned in versions.env instead.
+      - name: install pinned Go toolchain
+        run: ./scripts/install-go.sh
+
       - name: build all packages
         run: ./scripts/build-all.sh
 
@@ -62,10 +67,67 @@ jobs:
           path: out/*.deb
           if-no-files-found: error
 
+  # Run schema's debian/tests/ for real, the way official.yml does for the
+  # official tree: build the package, then autopkgtest the built .deb with
+  # the null runner in a disposable container (see scripts/run-autopkgtest.sh
+  # for why null). schema is the only packages/* entry with an autopkgtest —
+  # the C libraries are covered by the smoke test and their official-track
+  # tests.
+  autopkgtest-schema:
+    runs-on: ubuntu-24.04
+    container: debian:13
+    env:
+      DEBIAN_FRONTEND: noninteractive
+    steps:
+      # --no-install-recommends: the testbed starts minimal so the test's
+      # own Depends line is what provides its environment.
+      - name: install build tools and autopkgtest
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends \
+            build-essential debhelper devscripts autopkgtest dpkg-dev \
+            apt-utils git curl ca-certificates
+
+      - uses: actions/checkout@v4
+
+      - name: install pinned Go toolchain
+        run: ./scripts/install-go.sh
+
+      - name: build schema package
+        run: ./scripts/build-package.sh schema
+
+      # Only exit 0 is a pass: skipped or missing tests are the failure this
+      # job exists to catch (autopkgtest(1) EXIT STATUS).
+      - name: run autopkgtest
+        run: |
+          rc=0
+          autopkgtest --no-built-binaries \
+            --output-dir out-autopkgtest/schema \
+            --summary out-autopkgtest/schema.summary \
+            build/schema/schema_*.deb build/schema/schema-*/ \
+            -- null || rc=$?
+          for f in out-autopkgtest/schema/*-stdout out-autopkgtest/schema/*-stderr; do
+            [ -s "$f" ] || continue
+            echo "--- $(basename "$f") ---"
+            cat "$f"
+          done
+          if [ -s out-autopkgtest/schema.summary ]; then
+            cat out-autopkgtest/schema.summary
+          fi
+          echo "autopkgtest exit $rc"
+          [ "$rc" -eq 0 ]
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: autopkgtest-logs-schema
+          path: out-autopkgtest/
+          if-no-files-found: warn
+
   publish:
     # PR builds validate the packages but never publish.
     if: github.event_name != 'pull_request'
-    needs: build
+    needs: [build, autopkgtest-schema]
     runs-on: ubuntu-latest
     permissions:
       contents: read
