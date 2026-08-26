@@ -1,5 +1,7 @@
 # mas-bandwidth apt repository
 
+If these packages help you, please support them: **[Become a supporter](https://www.patreon.com/MasBandwidth/membership)**
+
 Debian and Ubuntu packages for [yojimbo](https://github.com/mas-bandwidth/yojimbo),
 [netcode](https://github.com/mas-bandwidth/netcode),
 [reliable](https://github.com/mas-bandwidth/reliable) and
