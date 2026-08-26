@@ -6,9 +6,12 @@ include /usr/share/dpkg/pkg-info.mk
 
 # Hermetic build: the module has no dependencies, so nothing may be fetched,
 # and the pinned toolchain must be the one that builds (no auto-download).
+# -buildvcs=false: the source is a release tarball, not a git checkout (and
+# it unpacks inside the packaging repo's checkout, whose .git go must not
+# read); the version is stamped explicitly below.
 export GOPROXY = off
 export GOTOOLCHAIN = local
-export GOFLAGS = -trimpath
+export GOFLAGS = -trimpath -buildvcs=false
 export GOCACHE = $(CURDIR)/debian/.gocache
 export CGO_ENABLED = 0
 
