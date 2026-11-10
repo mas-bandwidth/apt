@@ -13,9 +13,5 @@ export DEB_CPPFLAGS_MAINT_APPEND = -DNDEBUG
 override_dh_auto_configure:
 	dh_auto_configure -- -DYOJIMBO_SYSTEM_DEPS=ON
 
-# yojimbo has no ctest wiring; run its test binary directly (executables
-# are written to bin/ at the source root). Must print "ALL TESTS PASS".
-override_dh_auto_test:
-ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
-	$(CURDIR)/bin/test
-endif
+# dh_auto_test runs the upstream ctest suite (yojimbo_test,
+# yojimbo_custom_packet_io_test, yojimbo_check_compile_commands_fp).
