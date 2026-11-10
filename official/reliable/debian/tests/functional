@@ -140,7 +140,7 @@ int main()
         uint8_t acked[ITERATIONS];
         memset( acked, 0, sizeof( acked ) );
         int num_acks = 0;
-        uint16_t * acks = reliable_endpoint_get_acks( context.endpoint[i], &num_acks );
+        const uint16_t * acks = reliable_endpoint_get_acks( context.endpoint[i], &num_acks );
         int a;
         for ( a = 0; a < num_acks; ++a )
         {
